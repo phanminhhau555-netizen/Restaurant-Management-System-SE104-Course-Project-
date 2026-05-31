@@ -36,7 +36,7 @@ const kitchenItems = [
 
 const staffItems = [
   { path: "/staff/tables", label: "Order món", icon: ForkKnife }, 
-  { path: "/staff/sales", label: "Quản lý bán hàng", icon: ListChecks }, 
+  { path: "/staff/sales", label: "Quản lý bán hàng", icon: ListChecks },
   { path: "/staff/customers", label: "Khách hàng", icon: UsersThree }
 ];
 

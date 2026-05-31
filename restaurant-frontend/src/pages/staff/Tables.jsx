@@ -388,7 +388,16 @@ export default function TablesPage() {
                 }}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
               >
-                Thanh Toán
+                Order món
+              </button>
+              <button
+                onClick={() => {
+                  navigate(`/staff/payments/${contextMenu.table.id}`);
+                  setContextMenu(null);
+                }}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-blue-700 hover:bg-blue-50 transition-colors"
+              >
+                Thanh toán
               </button>
               <button
                 onClick={() => {
