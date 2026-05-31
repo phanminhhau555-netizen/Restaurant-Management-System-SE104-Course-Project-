@@ -1,0 +1,9 @@
+{
+  "name": "nhahangwow",
+  "private": true,
+  "scripts": {
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev.ps1",
+    "dev:backend": "npm --prefix restaurant-backend run dev",
+    "dev:frontend": "npm --prefix restaurant-frontend run dev"
+  }
+}
