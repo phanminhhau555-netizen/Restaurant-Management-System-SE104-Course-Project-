@@ -40,6 +40,7 @@ export default function TablesPage() {
   const [reserveTime, setReserveTime] = useState("");
   const [cardSize, setCardSize] = useState(160);
   const [rightPanelWidth, setRightPanelWidth] = useState(240);
+  const [selectedQRTable, setSelectedQRTable] = useState(null);
 
   useEffect(() => {
     fetchTables();
@@ -354,6 +355,16 @@ export default function TablesPage() {
             {contextMenu.table.name}
           </p>
           
+          <button
+            onClick={() => {
+              setSelectedQRTable(contextMenu.table);
+              setContextMenu(null);
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-emerald-600 hover:bg-emerald-50 transition-colors"
+          >
+            Mã QR Bàn
+          </button>
+          
           {contextMenu.table.status === "trong" && (
             <>
               <button
@@ -526,6 +537,61 @@ export default function TablesPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {selectedQRTable && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 print:hidden">
+          <section className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-[0_28px_90px_rgba(15,23,42,0.22)] text-center">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-black text-slate-900">Mã QR {selectedQRTable.name}</h2>
+              <button 
+                type="button" 
+                onClick={() => setSelectedQRTable(null)} 
+                className="admin-tab h-9 min-h-9 px-3 font-bold"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-xs font-bold text-slate-400 mb-4 uppercase">
+              Khu vực: {areas.find(a => a.id === selectedQRTable.area_id)?.name || "Chưa xác định"}
+            </p>
+
+            <div className="mx-auto my-6 flex h-60 w-60 items-center justify-center border border-slate-100 rounded-xl bg-slate-50 p-3 shadow-inner">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+                  `${window.location.origin}/staff/orders/${selectedQRTable.id}?mode=qr`
+                )}`}
+                alt={`QR code for ${selectedQRTable.name}`}
+                className="h-full w-full object-contain"
+              />
+            </div>
+
+            <p className="text-[11px] font-semibold text-slate-500 mb-6 leading-relaxed">
+              Dán mã này tại bàn để phục vụ viên quét nhanh và truy cập trực tiếp vào giao diện nhập món của {selectedQRTable.name}.
+            </p>
+
+            <div className="flex gap-3">
+              <a
+                href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(
+                  `${window.location.origin}/staff/orders/${selectedQRTable.id}?mode=qr`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 admin-primary-btn text-center flex items-center justify-center min-h-11"
+              >
+                Mở ảnh lớn để in
+              </a>
+              <button
+                type="button"
+                onClick={() => setSelectedQRTable(null)}
+                className="flex-1 admin-tab min-h-11"
+              >
+                Đóng
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </div>

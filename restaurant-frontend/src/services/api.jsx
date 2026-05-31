@@ -1,7 +1,16 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  // Tự động nhận diện IP của máy tính chạy server để điện thoại kết nối chính xác qua Wi-Fi
+  const hostname = window.location.hostname;
+  return `http://${hostname}:5000`;
+};
+
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  baseURL: getBaseURL(),
 });
 
 // Tự động thêm token vào mỗi request

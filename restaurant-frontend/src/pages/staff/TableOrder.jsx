@@ -72,6 +72,7 @@ const renderStatusBadges = (item) => {
 export default function TableOrder() {
   const { tableId } = useParams();
   const navigate = useNavigate();
+  const isQRMode = new URLSearchParams(window.location.search).get("mode") === "qr" || new URLSearchParams(window.location.search).get("qr") === "true";
 
   const [table, setTable] = useState(null);
   const [menu, setMenu] = useState([]);
@@ -447,12 +448,14 @@ export default function TableOrder() {
       <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-[#fbfbf8]/95 px-5 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.04)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/staff/tables")}
-              className="admin-secondary-btn h-9 w-9 p-0"
-            >
-              <ArrowLeft size={16} weight="bold" />
-            </button>
+            {!isQRMode && (
+              <button
+                onClick={() => navigate("/staff/tables")}
+                className="admin-secondary-btn h-9 w-9 p-0"
+              >
+                <ArrowLeft size={16} weight="bold" />
+              </button>
+            )}
             <div>
               <p className="admin-kicker">Đặt món</p>
               <h1 className="text-[18px] font-black leading-tight text-slate-950">
