@@ -13,7 +13,7 @@ async function hideMenuItemsWithOutOfStockIngredients(db, ingredientIds = []) {
      JOIN recipes r ON r.menu_item_id = m.id
      JOIN ingredients i ON i.id = r.ingredient_id
      SET m.is_visible = 0
-     WHERE i.quantity <= 0
+     WHERE i.quantity < r.amount
        ${ingredientFilter}`,
     params
   );
@@ -38,7 +38,7 @@ async function showMenuItemsWithAvailableIngredients(db, ingredientIds = []) {
          FROM recipes r
          JOIN ingredients i ON i.id = r.ingredient_id
          WHERE r.menu_item_id = m.id
-           AND i.quantity <= 0
+           AND i.quantity < r.amount
        )`,
     [ids]
   );
