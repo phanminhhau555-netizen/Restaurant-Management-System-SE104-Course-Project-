@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { hideMenuItemsWithOutOfStockIngredients } = require('../services/menuAvailabilityService');
+const { checkOrderItemsAvailability } = require('../services/orderInventoryService');
 
 // TÍNH TIỀN & LẬP HÓA ĐƠN
 exports.getInvoice = async (req, res) => {
@@ -107,10 +108,30 @@ exports.checkout = async (req, res) => {
       return res.status(400).json({ message: 'Order đã được thanh toán!' });
     }
 
+    const requestedItems = items && Array.isArray(items)
+      ? items
+      : (await db.query(
+          'SELECT menu_item_id, quantity FROM order_items WHERE order_id=? AND status != "huy"',
+          [order_id]
+        ))[0];
+
+    const shortages = await checkOrderItemsAvailability(db, requestedItems, {
+      excludeOrderId: order_id,
+    });
+
+    if (shortages.length > 0) {
+      const firstShortage = shortages[0];
+      const ingredientName = firstShortage.limiting_ingredients?.[0]?.ingredient_name || 'nguyên liệu';
+      return res.status(409).json({
+        message: `Không thể thanh toán vì ${ingredientName} chỉ còn đủ cho ${firstShortage.max_quantity} phần.`,
+        shortages,
+      });
+    }
+
     // Ghi đè lại toàn bộ món ăn thực tế còn lại trong bàn
     if (items && Array.isArray(items)) {
       await db.query('DELETE FROM order_items WHERE order_id=?', [order_id]);
-      for (const item of items) {
+      for (const item of requestedItems) {
         await db.query(
           `INSERT INTO order_items 
             (order_id, menu_item_id, quantity, price, note, status) 

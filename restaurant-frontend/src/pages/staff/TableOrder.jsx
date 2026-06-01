@@ -268,6 +268,90 @@ export default function TableOrder() {
     return result;
   }, [activeCategory, menu, searchTerm]);
 
+  const getMenuAvailability = (id) => {
+    const menuItem = menu.find((entry) => Number(entry.id) === Number(id));
+    const value = menuItem?.max_order_quantity;
+    return value === null || value === undefined ? null : Math.max(0, Number(value) || 0);
+  };
+
+  const getMenuItem = (id) => menu.find((entry) => Number(entry.id) === Number(id));
+
+  const getSentQuantity = (item) =>
+    item.serverParts ? item.serverParts.reduce((sum, part) => sum + Number(part.quantity || 0), 0) : 0;
+
+  const getUnsentQuantity = (item) => Math.max(0, Number(item?.quantity || 0) - getSentQuantity(item));
+
+  const getIngredientRequirement = (menuItemId, ingredientId) => {
+    const menuItem = getMenuItem(menuItemId);
+    const ingredient = menuItem?.ingredient_availability?.find(
+      (entry) => Number(entry.ingredient_id) === Number(ingredientId)
+    );
+    return Number(ingredient?.required_per_item || 0);
+  };
+
+  const getLocalUnsentUsage = (ingredientId, excludedItemId, cartItems = cart) =>
+    cartItems.reduce((sum, cartItem) => {
+      if (Number(cartItem.id) === Number(excludedItemId)) return sum;
+      const required = getIngredientRequirement(cartItem.id, ingredientId);
+      return sum + required * getUnsentQuantity(cartItem);
+    }, 0);
+
+  const getMaxCartQuantity = (item, cartItems = cart) => {
+    const menuItem = getMenuItem(item.id);
+    const ingredientAvailability = menuItem?.ingredient_availability || [];
+    const sentQuantity = getSentQuantity(item);
+
+    if (ingredientAvailability.length === 0) {
+      const maxAdditional = getMenuAvailability(item.id);
+      return maxAdditional === null ? null : sentQuantity + maxAdditional;
+    }
+
+    const ingredientLimits = ingredientAvailability
+      .map((ingredient) => {
+        const required = Number(ingredient.required_per_item || 0);
+        if (required <= 0) return null;
+        const remaining = Number(ingredient.remaining_quantity || 0);
+        const usedByOtherLocalItems = getLocalUnsentUsage(ingredient.ingredient_id, item.id, cartItems);
+        return sentQuantity + Math.max(0, Math.floor((remaining - usedByOtherLocalItems) / required));
+      })
+      .filter((value) => value !== null);
+
+    if (ingredientLimits.length === 0) return null;
+    return Math.min(...ingredientLimits);
+  };
+
+  const canAddMore = (id) => {
+    const existing = cart.find((entry) => Number(entry.id) === Number(id));
+    const item = existing || { id, quantity: 0, serverParts: [] };
+    const maxQuantity = getMaxCartQuantity(item);
+    if (maxQuantity === null) return true;
+    return Number(item.quantity || 0) < maxQuantity;
+  };
+
+  useEffect(() => {
+    if (loading || menu.length === 0 || cart.length === 0) return;
+
+    setCart((prev) => {
+      let changed = false;
+      const nextCart = prev
+        .map((item) => {
+          const maxQuantity = getMaxCartQuantity(item, prev);
+          if (maxQuantity !== null && Number(item.quantity || 0) > maxQuantity) {
+            changed = true;
+            return { ...item, quantity: maxQuantity };
+          }
+          return item;
+        })
+        .filter((item) => Number(item.quantity || 0) > 0);
+
+      if (changed) {
+        setError("Một số món đã được tự giảm về số lượng còn đủ nguyên liệu trong kho.");
+      }
+
+      return changed ? nextCart : prev;
+    });
+  }, [loading, menu]);
+
   const totalPages = Math.max(1, Math.ceil(filteredMenu.length / ITEMS_PER_PAGE));
   const activePage = currentPage > totalPages ? totalPages : currentPage;
   const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
@@ -276,9 +360,19 @@ export default function TableOrder() {
   const addToCart = (item) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.id === item.id);
+      const currentItem = existing || { ...item, quantity: 0, serverParts: [] };
+      const maxQuantity = getMaxCartQuantity(currentItem, prev);
+      const currentQuantity = Number(currentItem.quantity || 0);
+
+      if (maxQuantity !== null && currentQuantity >= maxQuantity) {
+        setError(`Kho chỉ còn đủ để order tối đa ${maxQuantity} ${item.unit || "phần"} ${item.name}.`);
+        return prev;
+      }
+
+      setError("");
       if (existing) {
         return prev.map((c) =>
-          c.id === item.id ? { ...c, quantity: Number(c.quantity) + 1 } : c
+          c.id === item.id ? { ...c, quantity: Math.min(Number(c.quantity) + 1, maxQuantity ?? Number(c.quantity) + 1) } : c
         );
       }
       return [...prev, { ...item, quantity: 1, note: "", sendToKitchen: true, serverParts: [] }];
@@ -307,7 +401,16 @@ export default function TableOrder() {
         if (c.id === id) {
           if (val === "") return { ...c, quantity: "" };
           const parsed = parseFloat(val);
-          return { ...c, quantity: isNaN(parsed) ? 0 : parsed };
+          if (isNaN(parsed)) return { ...c, quantity: 0 };
+
+          const maxQuantity = getMaxCartQuantity(c, prev);
+          if (maxQuantity !== null && parsed > maxQuantity) {
+            setError(`Kho chỉ còn đủ để order tối đa ${maxQuantity} ${c.unit || "phần"} ${c.name}.`);
+            return { ...c, quantity: maxQuantity };
+          }
+
+          setError("");
+          return { ...c, quantity: parsed };
         }
         return c;
       })
@@ -401,13 +504,17 @@ export default function TableOrder() {
       }
 
       // Thêm từng món mới/số lượng tăng thêm vào order
+      const adjustedMessages = [];
       for (const item of itemsToPost) {
-        await API.post(`/api/orders/${currentOrderId}/items`, {
+        const itemRes = await API.post(`/api/orders/${currentOrderId}/items`, {
           menu_item_id: item.id,
           quantity: item.newQty,
           note: item.note || "",
           status: item.sendToKitchen !== false ? 'cho' : 'hoan_thanh'
         });
+        if (itemRes.data?.inventory_adjusted) {
+          adjustedMessages.push(`${item.name}: chỉ thêm được ${itemRes.data.added_quantity}`);
+        }
       }
 
       // Chỉ kích hoạt thông báo cho bếp nếu có ít nhất một món mới chọn gửi bếp
@@ -419,8 +526,11 @@ export default function TableOrder() {
       // Tải lại toàn bộ dữ liệu mới nhất từ server để đồng bộ chuẩn xác
       await fetchData();
 
-      setSuccess("Đã gửi đơn hàng thành công! Bạn có thể tiếp tục chỉnh sửa hoặc thêm món.");
-      alert("Đã gửi đơn hàng thành công! Bạn có thể tiếp tục chỉnh sửa hoặc thêm món.");
+      const successMessage = adjustedMessages.length > 0
+        ? `Đã gửi đơn hàng. Một số món được giới hạn theo tồn kho: ${adjustedMessages.join(", ")}.`
+        : "Đã gửi đơn hàng thành công! Bạn có thể tiếp tục chỉnh sửa hoặc thêm món.";
+      setSuccess(successMessage);
+      alert(successMessage);
     } catch (err) {
       setError(err.response?.data?.message || "Lỗi gửi order!");
       alert("Lỗi: " + (err.response?.data?.message || err.message));
@@ -568,7 +678,9 @@ export default function TableOrder() {
                           <button
                             type="button"
                             onClick={() => addToCart(item)}
-                            className="flex h-5 w-5 items-center justify-center rounded text-emerald-700 transition-colors hover:bg-emerald-50"
+                            disabled={!canAddMore(item.id)}
+                            className="flex h-5 w-5 items-center justify-center rounded text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                            title={canAddMore(item.id) ? "Tăng số lượng" : "Đã đạt giới hạn tồn kho"}
                           >
                             <Plus size={9} weight="bold" />
                           </button>
@@ -710,13 +822,20 @@ export default function TableOrder() {
                       <p className="text-[10px] font-bold text-blue-600 mt-1">
                         {formatMoney(item.price)}
                       </p>
+                      {item.max_order_quantity !== null && item.max_order_quantity !== undefined ? (
+                        <p className={`mt-0.5 text-[9px] font-black ${Number(item.max_order_quantity) > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                          Còn {Number(item.max_order_quantity) || 0}
+                        </p>
+                      ) : null}
                     </div>
 
                     {/* Nút bấm siêu nhỏ bên phải */}
                     {qty === 0 ? (
                       <button
                         onClick={() => addToCart(item)}
-                        className="h-6 w-6 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs transition-colors shrink-0"
+                        disabled={!canAddMore(item.id)}
+                        className="h-6 w-6 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs transition-colors shrink-0 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
+                        title={canAddMore(item.id) ? "Thêm món" : "Đã hết số lượng có thể order"}
                       >
                         +
                       </button>
@@ -731,7 +850,9 @@ export default function TableOrder() {
                         <span className="w-3.5 text-center text-[10px] font-black text-slate-800">{qty}</span>
                         <button
                           onClick={() => addToCart(item)}
-                          className="h-5 w-5 bg-emerald-600 hover:bg-emerald-700 rounded flex items-center justify-center font-bold text-[10px] text-white"
+                          disabled={!canAddMore(item.id)}
+                          className="h-5 w-5 bg-emerald-600 hover:bg-emerald-700 rounded flex items-center justify-center font-bold text-[10px] text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                          title={canAddMore(item.id) ? "Tăng số lượng" : "Đã đạt giới hạn tồn kho"}
                         >
                           +
                         </button>

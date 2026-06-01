@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { hideMenuItemsWithOutOfStockIngredients } = require('../services/menuAvailabilityService');
+const { getMenuItemsAvailabilityMap } = require('../services/orderInventoryService');
 
 // LẤY DANH MỤC MÓN ĂN
 exports.getCategories = async (req, res) => {
@@ -90,13 +91,21 @@ exports.deleteCategory = async (req, res) => {
 exports.getAllItems = async (req, res) => {
   try {
     await hideMenuItemsWithOutOfStockIngredients(db);
+    const availabilityMap = await getMenuItemsAvailabilityMap(db);
 
     const [rows] = await db.query(`
       SELECT m.*, c.name as category_name 
       FROM menu_items m
       LEFT JOIN categories c ON m.category_id = c.id
     `);
-    res.json(rows);
+    res.json(rows.map((row) => {
+      const availability = availabilityMap.get(Number(row.id));
+      return {
+        ...row,
+        max_order_quantity: availability ? availability.max_quantity : null,
+        ingredient_availability: availability ? availability.ingredients : [],
+      };
+    }));
   } catch (err) {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   }

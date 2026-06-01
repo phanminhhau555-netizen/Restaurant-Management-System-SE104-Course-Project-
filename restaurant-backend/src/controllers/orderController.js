@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { getMenuItemAvailability } = require('../services/orderInventoryService');
 
 // TẠO ORDER MỚI
 exports.createOrder = async (req, res) => {
@@ -37,29 +38,77 @@ exports.createOrder = async (req, res) => {
 exports.addOrderItem = async (req, res) => {
   const { menu_item_id, quantity, note, status } = req.body;
   const order_id = req.params.id;
+  const requestedQuantity = Number(quantity);
+  if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
+    return res.status(400).json({ message: 'Số lượng món phải lớn hơn 0!' });
+  }
+
+  const connection = await db.getConnection();
   try {
+    await connection.beginTransaction();
+
     // Lấy giá món ăn
-    const [menuItem] = await db.query(
+    const [menuItem] = await connection.query(
       'SELECT price FROM menu_items WHERE id=?', [menu_item_id]
     );
     if (menuItem.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ message: 'Không tìm thấy món ăn!' });
     }
 
+    await connection.query(
+      `SELECT i.id
+       FROM recipes r
+       JOIN ingredients i ON i.id = r.ingredient_id
+       WHERE r.menu_item_id = ?
+       FOR UPDATE`,
+      [menu_item_id]
+    );
+
+    const availability = await getMenuItemAvailability(connection, menu_item_id);
+    const allowedQuantity = availability.max_quantity === null
+      ? requestedQuantity
+      : Math.min(requestedQuantity, availability.max_quantity);
+
+    if (allowedQuantity <= 0) {
+      await connection.rollback();
+      const ingredientName = availability.limiting_ingredients?.[0]?.ingredient_name || 'nguyên liệu';
+      return res.status(409).json({
+        message: `Không thể thêm món này vì ${ingredientName} đã hết hoặc đã được giữ cho order khác.`,
+        requested_quantity: requestedQuantity,
+        allowed_quantity: 0,
+        max_quantity: 0,
+      });
+    }
+
     // Thêm món vào order
-    await db.query(
+    await connection.query(
       `INSERT INTO order_items 
         (order_id, menu_item_id, quantity, price, note, status) 
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [order_id, menu_item_id, quantity, menuItem[0].price, note || null, status || 'cho']
+      [order_id, menu_item_id, allowedQuantity, menuItem[0].price, note || null, status || 'cho']
     );
 
     // Cập nhật tổng tiền
-    await updateOrderTotal(order_id);
+    await updateOrderTotal(order_id, connection);
 
-    res.status(201).json({ message: 'Thêm món thành công!' });
+    await connection.commit();
+
+    const adjusted = allowedQuantity < requestedQuantity;
+    res.status(201).json({
+      message: adjusted
+        ? `Kho chỉ đủ ${allowedQuantity}, hệ thống đã thêm số lượng tối đa có thể.`
+        : 'Thêm món thành công!',
+      requested_quantity: requestedQuantity,
+      added_quantity: allowedQuantity,
+      max_quantity: availability.max_quantity,
+      inventory_adjusted: adjusted,
+    });
   } catch (err) {
+    await connection.rollback();
     res.status(500).json({ message: 'Lỗi server', error: err.message });
+  } finally {
+    connection.release();
   }
 };
 
@@ -198,8 +247,8 @@ exports.getKitchenOrders = async (req, res) => {
 };
 
 // HÀM TÍNH TỔNG TIỀN (dùng nội bộ)
-async function updateOrderTotal(order_id) {
-  await db.query(`
+async function updateOrderTotal(order_id, connection = db) {
+  await connection.query(`
     UPDATE orders SET total_amount = (
       SELECT SUM(price * quantity) 
       FROM order_items 
