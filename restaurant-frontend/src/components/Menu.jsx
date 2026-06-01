@@ -483,73 +483,73 @@ export default function Menu({ permissions = {} }) {
       )}
 
       <div className="flex gap-4">
-        {/* Main Content */}
-        <div className="flex-1">
-          {/* Category Filter + Stats */}
-          <div className="mb-4 flex gap-4">
-            {/* Filter */}
-            <div className="admin-panel-pad flex-1">
-              <div className="mb-3 flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <section className="admin-panel mb-4 overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+              <div className="flex items-center gap-3">
                 <p className="admin-section-title">Danh mục nhanh</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex h-10 w-[320px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 shadow-sm transition focus-within:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-100">
-                    <MagnifyingGlass size={17} className="shrink-0 text-slate-400" weight="bold" />
-                    <input
-                      type="search"
-                      value={searchTerm}
-                      onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder="Tìm món, mã DF, danh mục"
-                      className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
-                    />
-                    {searchTerm ? (
-                      <button
-                        type="button"
-                        onClick={() => setSearchTerm("")}
-                        className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                        aria-label="Xóa tìm kiếm"
-                      >
-                        <X size={14} weight="bold" />
-                      </button>
-                    ) : null}
-                  </div>
-                  {canManageCategories ? (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
+                  {menu.filter((item) => item.is_visible).length}/{menu.length} đang bán
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-10 w-[360px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
+                  <MagnifyingGlass size={17} className="shrink-0 text-slate-400" weight="bold" />
+                  <input
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Tìm món, mã DF, danh mục"
+                    className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+                  />
+                  {searchTerm ? (
                     <button
                       type="button"
-                      onClick={() => setCategoryManagerOpen(true)}
-                      className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-50"
+                      onClick={() => setSearchTerm("")}
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                      aria-label="Xóa tìm kiếm"
                     >
-                      <Tag size={14} weight="bold" />
-                      Quản lý danh mục
+                      <X size={14} weight="bold" />
                     </button>
                   ) : null}
                 </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {allCategories.map((cat) => (
+                {canManageCategories ? (
                   <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      activeCategory === cat.id
-                        ? "bg-emerald-700 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
+                    type="button"
+                    onClick={() => setCategoryManagerOpen(true)}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-50"
                   >
-                    {cat.label}
+                    <Tag size={14} weight="bold" />
+                    Quản lý danh mục
                   </button>
-                ))}
+                ) : null}
               </div>
             </div>
-
-            {/* Tổng món */}
-            <div className="w-48 rounded-2xl bg-emerald-700 p-4 text-white shadow-[0_18px_40px_rgba(4,120,87,0.18)]">
-              <p className="text-xs font-black uppercase tracking-wide opacity-75">Đang bán</p>
-              <p className="mt-1 text-3xl font-black">{menu.filter(m => m.is_visible).length}</p>
+            <div className="flex flex-wrap gap-2 px-5 py-3">
+              {allCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                    activeCategory === cat.id
+                      ? "bg-emerald-700 text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
             </div>
-          </div>
+          </section>
 
-          {/* Menu list */}
-          <div className="admin-panel overflow-hidden">
+          <section className="admin-panel overflow-hidden">
+            <div className="grid grid-cols-[minmax(360px,1fr)_140px_140px_128px] items-center gap-4 border-b border-slate-100 bg-slate-50/70 px-5 py-3 text-[11px] font-black uppercase tracking-wide text-slate-400">
+              <span>Món ăn</span>
+              <span>Trạng thái</span>
+              <span className="text-right">Giá bán</span>
+              <span className="text-right">Thao tác</span>
+            </div>
             {loading ? (
               <div className="px-5 py-12 text-center text-sm font-bold text-slate-400">
                 Đang tải...
@@ -560,7 +560,7 @@ export default function Menu({ permissions = {} }) {
                 <p>Chưa có món ăn nào</p>
               </div>
             ) : (
-              <div className="admin-menu-scroll max-h-[calc(100vh-300px)] min-h-[360px] divide-y divide-slate-100 overflow-y-auto">
+              <div className="admin-menu-scroll max-h-[calc(100vh-330px)] min-h-[380px] divide-y divide-slate-100 overflow-y-auto">
                 {filtered.map((item) => (
                   <article
                     key={item.id}
@@ -568,7 +568,7 @@ export default function Menu({ permissions = {} }) {
                     tabIndex={0}
                     onClick={() => showRecipePreview(item)}
                     onKeyDown={(event) => handleRecipePreviewKeyDown(event, item)}
-                    className="group flex cursor-pointer items-center justify-between gap-4 px-5 py-4 outline-none transition-colors hover:bg-emerald-50/45 focus:bg-emerald-50/55 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                    className="group grid cursor-pointer grid-cols-[minmax(360px,1fr)_140px_140px_128px] items-center gap-4 px-5 py-3.5 outline-none transition-colors hover:bg-emerald-50/45 focus:bg-emerald-50/55 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-lg ring-1 ring-slate-100">
@@ -593,58 +593,56 @@ export default function Menu({ permissions = {} }) {
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-400">
                           <span>DF-{String(item.id).padStart(4, "0")}</span>
-                          <span className="text-slate-200">•</span>
-                          <span className={`inline-flex items-center gap-1.5 ${STATUS_COLOR[item.is_visible]}`}>
-                            <span className={`h-2 w-2 rounded-full ${item.is_visible ? "bg-emerald-500" : "bg-slate-300"}`} />
-                            {item.is_visible ? "Sẵn sàng" : "Đã ẩn"}
-                          </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center justify-end gap-3">
-                      <p className="text-sm font-black text-slate-900">{formatMoney(item.price)}</p>
-                      {canToggleMenuItem || canDeleteMenuItem ? (
-                        <div className="flex items-center gap-2">
-                          {canToggleMenuItem ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggle(item.id);
-                              }}
-                              className={`rounded-lg px-3 py-2 text-xs font-black transition-colors ${
-                                item.is_visible
-                                  ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                              }`}
-                            >
-                              {item.is_visible ? "Ẩn" : "Hiện"}
-                            </button>
-                          ) : null}
-                          {canDeleteMenuItem ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(item.id);
-                              }}
-                              className="flex h-9 w-9 items-center justify-center rounded-lg text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                              aria-label={`Xóa ${item.name}`}
-                            >
-                              <Trash size={16} weight="bold" />
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : (
+                    <span className={`inline-flex items-center gap-1.5 text-sm font-bold ${STATUS_COLOR[item.is_visible]}`}>
+                      <span className={`h-2 w-2 rounded-full ${item.is_visible ? "bg-emerald-500" : "bg-slate-300"}`} />
+                      {item.is_visible ? "Sẵn sàng" : "Đã ẩn"}
+                    </span>
+
+                    <p className="text-right text-sm font-black text-slate-900">{formatMoney(item.price)}</p>
+
+                    <div className="flex items-center justify-end gap-2">
+                      {canToggleMenuItem ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggle(item.id);
+                          }}
+                          className={`rounded-lg px-3 py-2 text-xs font-black transition-colors ${
+                            item.is_visible
+                              ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          }`}
+                        >
+                          {item.is_visible ? "Ẩn" : "Hiện"}
+                        </button>
+                      ) : null}
+                      {canDeleteMenuItem ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
+                          className="flex h-9 w-9 items-center justify-center rounded-lg text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          aria-label={`Xóa ${item.name}`}
+                        >
+                          <Trash size={16} weight="bold" />
+                        </button>
+                      ) : null}
+                      {!canToggleMenuItem && !canDeleteMenuItem ? (
                         <span className="text-xs font-bold text-slate-300">Chỉ xem</span>
-                      )}
+                      ) : null}
                     </div>
                   </article>
                 ))}
               </div>
             )}
-          </div>
+          </section>
         </div>
       </div>
 
