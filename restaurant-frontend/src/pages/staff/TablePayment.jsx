@@ -7,6 +7,7 @@ import {
   Money,
   QrCode,
   Receipt,
+  User,
   WarningCircle,
 } from "@phosphor-icons/react";
 import API from "../../services/api";
@@ -39,6 +40,10 @@ export default function TablePayment() {
   const [settings, setSettings] = useState(null);
   const [activePaymentMethods, setActivePaymentMethods] = useState(["tien_mat", "chuyen_khoan", "qr"]);
   const [paymentMethod, setPaymentMethod] = useState("tien_mat");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customer, setCustomer] = useState(null);
+  const [customerMessage, setCustomerMessage] = useState("");
+  const [customerWasCreated, setCustomerWasCreated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -120,13 +125,52 @@ export default function TablePayment() {
 
   const formatMoney = (amount) => new Intl.NumberFormat("vi-VN").format(amount || 0) + "đ";
 
+  const lookupCustomer = async () => {
+    const phone = customerPhone.trim();
+    if (!phone) {
+      setCustomer(null);
+      setCustomerMessage("");
+      setCustomerWasCreated(false);
+      return null;
+    }
+
+    const res = await API.post("/api/customers/lookup", { phone });
+    const nextCustomer = res.data?.customer || null;
+    const isNew = Boolean(res.data?.isNew);
+    setCustomer(nextCustomer);
+    setCustomerWasCreated(isNew);
+    setCustomerMessage(
+      isNew
+        ? "Đã tạo khách hàng mới."
+        : `Tìm thấy khách hàng${nextCustomer?.full_name ? `: ${nextCustomer.full_name}` : ""}.`
+    );
+    return {
+      customer: nextCustomer,
+      isNew,
+    };
+  };
+
+  const getCheckoutCustomer = async () => {
+    if (!customerPhone.trim()) return null;
+    if (customer) {
+      return {
+        customer,
+        isNew: customerWasCreated,
+      };
+    }
+    return lookupCustomer();
+  };
+
   const completePayment = async () => {
     if (!order || visibleItems.length === 0) return;
     setSubmitting(true);
     setError("");
     try {
+      const checkoutCustomerResult = await getCheckoutCustomer();
+      const checkoutCustomer = checkoutCustomerResult?.customer || null;
       await API.post(`/api/payment/${order.id}/checkout`, {
         payment_method: paymentMethod,
+        customer_id: checkoutCustomer?.id || null,
         items: visibleItems.map((item) => ({
           menu_item_id: item.menu_item_id,
           quantity: item.quantity,
@@ -134,7 +178,13 @@ export default function TablePayment() {
           note: item.note || "",
         })),
       });
-      alert("Thanh toán hóa đơn thành công!");
+      alert(
+        checkoutCustomerResult?.isNew
+          ? "Đã tạo khách hàng mới."
+          : checkoutCustomer
+            ? "Thanh toán thành công. Điểm tích lũy đã được cộng cho khách hàng!"
+            : "Thanh toán hóa đơn thành công!"
+      );
       navigate("/staff/tables");
     } catch (err) {
       setError(err.response?.data?.message || "Lỗi thanh toán.");
@@ -251,6 +301,48 @@ export default function TablePayment() {
                   <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tổng thanh toán</p>
                 </div>
                 <p className="mt-1 text-2xl font-black text-emerald-700">{formatMoney(totalAmount)}</p>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                <div className="flex items-center gap-2">
+                  <User size={18} weight="duotone" className="text-slate-400" />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Khách hàng tích điểm
+                  </span>
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(event) => {
+                      setCustomerPhone(event.target.value);
+                      setCustomer(null);
+                      setCustomerMessage("");
+                      setCustomerWasCreated(false);
+                    }}
+                    onBlur={() => {
+                      if (customerPhone.trim()) lookupCustomer().catch(() => {});
+                    }}
+                    placeholder="Nhập số điện thoại"
+                    className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => lookupCustomer().catch((err) => setError(err.response?.data?.message || "Không tìm được khách hàng."))}
+                    className="admin-secondary-btn h-10 px-3 text-xs"
+                  >
+                    Kiểm tra
+                  </button>
+                </div>
+                {(customerMessage || customer) && (
+                  <p className="mt-2 text-[11px] font-bold text-emerald-700">
+                    {customerMessage}
+                    {customer?.points != null ? ` Hiện có ${customer.points} điểm.` : ""}
+                  </p>
+                )}
+                <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                  Bỏ trống nếu khách không cần tích điểm.
+                </p>
               </div>
 
               <div className="mt-4">

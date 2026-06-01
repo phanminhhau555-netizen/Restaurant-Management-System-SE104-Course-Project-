@@ -38,6 +38,10 @@ export default function StaffSalesPage() {
   const [checkoutMethod, setCheckoutMethod] = useState("tien_mat");
   const [activePaymentMethods, setActivePaymentMethods] = useState(["tien_mat", "chuyen_khoan", "qr"]);
   const [settings, setSettings] = useState(null);
+  const [checkoutCustomerPhone, setCheckoutCustomerPhone] = useState("");
+  const [checkoutCustomer, setCheckoutCustomer] = useState(null);
+  const [checkoutCustomerMessage, setCheckoutCustomerMessage] = useState("");
+  const [checkoutCustomerWasCreated, setCheckoutCustomerWasCreated] = useState(false);
 
   const activeBank = useMemo(() => {
     let currentBankId = BANK_CONFIG.bankId;
@@ -129,7 +133,47 @@ export default function StaffSalesPage() {
 
   const handleViewOrder = (order) => {
     setSelectedOrder(order);
+    setCheckoutCustomerPhone("");
+    setCheckoutCustomer(null);
+    setCheckoutCustomerMessage("");
+    setCheckoutCustomerWasCreated(false);
     fetchOrderDetail(order.id);
+  };
+
+  const lookupCheckoutCustomer = async () => {
+    const phone = checkoutCustomerPhone.trim();
+    if (!phone) {
+      setCheckoutCustomer(null);
+      setCheckoutCustomerMessage("");
+      setCheckoutCustomerWasCreated(false);
+      return null;
+    }
+
+    const res = await API.post("/api/customers/lookup", { phone });
+    const customer = res.data?.customer || null;
+    const isNew = Boolean(res.data?.isNew);
+    setCheckoutCustomer(customer);
+    setCheckoutCustomerWasCreated(isNew);
+    setCheckoutCustomerMessage(
+      isNew
+        ? "Đã tạo khách hàng mới."
+        : `Tìm thấy khách hàng${customer?.full_name ? `: ${customer.full_name}` : ""}.`
+    );
+    return {
+      customer,
+      isNew,
+    };
+  };
+
+  const getCheckoutCustomer = async () => {
+    if (!checkoutCustomerPhone.trim()) return null;
+    if (checkoutCustomer) {
+      return {
+        customer: checkoutCustomer,
+        isNew: checkoutCustomerWasCreated,
+      };
+    }
+    return lookupCheckoutCustomer();
   };
 
   // Reset Filters
@@ -547,6 +591,47 @@ export default function StaffSalesPage() {
                   <span className="text-xs font-black text-orange-800 uppercase tracking-wider block">
                     Xử lý thanh toán hóa đơn
                   </span>
+                  <div className="rounded-xl border border-slate-100 bg-white p-3">
+                    <div className="flex items-center gap-2">
+                      <User size={16} weight="duotone" className="text-slate-400" />
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        Khách hàng tích điểm
+                      </span>
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="tel"
+                        value={checkoutCustomerPhone}
+                        onChange={(event) => {
+                          setCheckoutCustomerPhone(event.target.value);
+                          setCheckoutCustomer(null);
+                          setCheckoutCustomerMessage("");
+                          setCheckoutCustomerWasCreated(false);
+                        }}
+                        onBlur={() => {
+                          if (checkoutCustomerPhone.trim()) lookupCheckoutCustomer().catch(() => {});
+                        }}
+                        placeholder="Nhập số điện thoại"
+                        className="h-9 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => lookupCheckoutCustomer().catch((err) => alert(err.response?.data?.message || "Không tìm được khách hàng."))}
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                      >
+                        Kiểm tra
+                      </button>
+                    </div>
+                    {(checkoutCustomerMessage || checkoutCustomer) && (
+                      <p className="mt-2 text-[11px] font-bold text-emerald-700">
+                        {checkoutCustomerMessage}
+                        {checkoutCustomer?.points != null ? ` Hiện có ${checkoutCustomer.points} điểm.` : ""}
+                      </p>
+                    )}
+                    <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                      Bỏ trống nếu khách không cần tích điểm.
+                    </p>
+                  </div>
                   <div className={`grid gap-2 ${
                     activePaymentMethods.length === 1 ? "grid-cols-1" :
                     activePaymentMethods.length === 2 ? "grid-cols-2" : "grid-cols-3"
@@ -597,12 +682,25 @@ export default function StaffSalesPage() {
                     <button
                       onClick={async () => {
                         try {
+                          const checkoutCustomerResult = await getCheckoutCustomer();
+                          const checkoutCustomer = checkoutCustomerResult?.customer || null;
                           await API.post(`/api/payment/${selectedOrder.id}/checkout`, {
-                            payment_method: checkoutMethod
+                            payment_method: checkoutMethod,
+                            customer_id: checkoutCustomer?.id || null,
                           });
-                          alert("Thanh toán hóa đơn thành công!");
+                          alert(
+                            checkoutCustomerResult?.isNew
+                              ? "Đã tạo khách hàng mới."
+                              : checkoutCustomer
+                                ? "Thanh toán thành công. Điểm tích lũy đã được cộng cho khách hàng!"
+                                : "Thanh toán hóa đơn thành công!"
+                          );
                           setSelectedOrder(null);
                           setOrderDetail(null);
+                          setCheckoutCustomerPhone("");
+                          setCheckoutCustomer(null);
+                          setCheckoutCustomerMessage("");
+                          setCheckoutCustomerWasCreated(false);
                           fetchOrders();
                         } catch (err) {
                           alert("Lỗi thanh toán: " + (err.response?.data?.message || err.message));

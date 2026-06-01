@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const { hideMenuItemsWithOutOfStockIngredients } = require('../services/menuAvailabilityService');
 const { checkOrderItemsAvailability } = require('../services/orderInventoryService');
+const { addPointsFromOrder } = require('./customerController');
 
 // TÍNH TIỀN & LẬP HÓA ĐƠN
 exports.getInvoice = async (req, res) => {
@@ -175,8 +176,8 @@ exports.checkout = async (req, res) => {
 
     // Cộng điểm khách hàng nếu có
     if (customer_id) {
-  await addPointsFromOrder(customer_id, Number(order_id), final_amount);
-}
+      await addPointsFromOrder(customer_id, Number(order_id), final_amount);
+    }
 
     // Tự động trừ kho nguyên liệu
     await deductInventory(order_id);
