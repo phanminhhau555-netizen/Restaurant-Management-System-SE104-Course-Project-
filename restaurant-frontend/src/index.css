@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --ease-admin-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-admin-soft: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-admin-fast: 160ms;
+    --duration-admin: 220ms;
+    --duration-admin-slow: 320ms;
+  }
+
   body {
     @apply bg-[#eff1ea] text-slate-900 antialiased;
   }
@@ -40,10 +48,15 @@
 @layer components {
   .admin-page {
     @apply mx-auto w-full max-w-[1480px] space-y-4;
+    animation: admin-fade-up var(--duration-admin-slow) var(--ease-admin-soft) both;
   }
 
   .admin-header {
     @apply flex items-end justify-between gap-4 rounded-[14px] border border-slate-200/80 bg-[#fbfbf8]/90 px-4 py-3 shadow-[0_12px_32px_rgba(15,23,42,0.045)];
+    transition:
+      box-shadow var(--duration-admin) var(--ease-admin-out),
+      border-color var(--duration-admin) var(--ease-admin-out),
+      transform var(--duration-admin) var(--ease-admin-out);
   }
 
   .admin-kicker {
@@ -60,10 +73,18 @@
 
   .admin-panel {
     @apply rounded-[14px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.045)];
+    transition:
+      box-shadow var(--duration-admin) var(--ease-admin-out),
+      border-color var(--duration-admin) var(--ease-admin-out),
+      transform var(--duration-admin) var(--ease-admin-out);
   }
 
   .admin-panel-pad {
     @apply rounded-[14px] border border-slate-200/80 bg-white p-3.5 shadow-[0_12px_32px_rgba(15,23,42,0.045)];
+    transition:
+      box-shadow var(--duration-admin) var(--ease-admin-out),
+      border-color var(--duration-admin) var(--ease-admin-out),
+      transform var(--duration-admin) var(--ease-admin-out);
   }
 
   .admin-section-title {
@@ -76,6 +97,12 @@
 
   .admin-tab {
     @apply min-h-9 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-600 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30;
+    transition:
+      background-color var(--duration-admin-fast) var(--ease-admin-out),
+      border-color var(--duration-admin-fast) var(--ease-admin-out),
+      color var(--duration-admin-fast) var(--ease-admin-out),
+      box-shadow var(--duration-admin-fast) var(--ease-admin-out),
+      transform var(--duration-admin-fast) var(--ease-admin-out);
   }
 
   .admin-tab-active {
@@ -83,15 +110,22 @@
   }
 
   .admin-primary-btn {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 text-[13px] font-black text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-[0_14px_26px_rgba(4,120,87,0.2)] active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-3.5 text-[13px] font-black text-white transition-all duration-200 hover:bg-emerald-800 hover:shadow-[0_10px_20px_rgba(4,120,87,0.14)] active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-none;
+    transition-timing-function: var(--ease-admin-out);
   }
 
   .admin-secondary-btn {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-[13px] font-black text-slate-600 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-50 hover:shadow-sm active:translate-y-0 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-[13px] font-black text-slate-600 transition-all duration-200 hover:bg-slate-50 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60;
+    transition-timing-function: var(--ease-admin-out);
   }
 
   .admin-field {
     @apply min-h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] font-semibold text-slate-800 outline-none transition-colors focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100;
+    transition:
+      background-color var(--duration-admin-fast) var(--ease-admin-out),
+      border-color var(--duration-admin-fast) var(--ease-admin-out),
+      box-shadow var(--duration-admin-fast) var(--ease-admin-out),
+      transform var(--duration-admin-fast) var(--ease-admin-out);
   }
 
   .admin-label {
@@ -120,10 +154,14 @@
 
   .admin-table tbody tr {
     @apply transition-colors hover:bg-slate-50;
+    transition:
+      background-color var(--duration-admin-fast) var(--ease-admin-out),
+      transform var(--duration-admin-fast) var(--ease-admin-out);
   }
 
   .admin-lift {
-    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(15,23,42,0.09)];
+    @apply transition-all duration-200 hover:shadow-[0_16px_42px_rgba(15,23,42,0.07)];
+    transition-timing-function: var(--ease-admin-out);
   }
 
   .admin-command-strip {
@@ -156,6 +194,30 @@
   }
 }
 
+@keyframes admin-fade-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes admin-scale-in {
+  from {
+    transform: translateY(10px) scale(0.985);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
 @keyframes admin-ping {
   75%,
   100% {
@@ -165,14 +227,30 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .admin-page {
+    animation: none;
+  }
+
   .admin-primary-btn,
   .admin-secondary-btn,
-  .admin-lift {
+  .admin-lift,
+  .admin-field {
     transition: none;
   }
 
   .admin-primary-btn:hover,
   .admin-secondary-btn:hover,
+  .admin-primary-btn:active,
+  .admin-secondary-btn:active,
   .admin-lift:hover {
     transform: none;
   }

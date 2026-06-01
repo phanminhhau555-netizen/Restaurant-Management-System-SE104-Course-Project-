@@ -194,15 +194,7 @@ export default function Menu({ permissions = {} }) {
       ...item,
       recipes: itemRecipes,
     });
-    setForm({
-      name: item.name || "",
-      price: item.price ?? "",
-      description: item.description || "",
-      category_id: item.category_id || categories[0]?.id || "",
-      image_url: item.image_url || "",
-      is_visible: Boolean(item.is_visible),
-    });
-    setRecipeRows(
+    setEditRecipeRows(
       itemRecipes.length > 0
         ? itemRecipes.map((recipe) => ({
           ingredient_id: String(recipe.ingredient_id),
@@ -211,7 +203,28 @@ export default function Menu({ permissions = {} }) {
         : [{ ingredient_id: "", amount: "" }],
     );
     setEditingRecipe(false);
-    setShowForm(true);
+
+    if (canCreateMenuItem) {
+      setForm({
+        name: item.name || "",
+        price: item.price ?? "",
+        description: item.description || "",
+        category_id: item.category_id || categories[0]?.id || "",
+        image_url: item.image_url || "",
+        is_visible: Boolean(item.is_visible),
+      });
+      setRecipeRows(
+        itemRecipes.length > 0
+          ? itemRecipes.map((recipe) => ({
+            ingredient_id: String(recipe.ingredient_id),
+            amount: String(recipe.amount),
+          }))
+          : [{ ingredient_id: "", amount: "" }],
+      );
+      setShowForm(true);
+    } else {
+      setShowForm(false);
+    }
   };
 
   const handleRecipePreviewKeyDown = (event, item) => {
@@ -965,8 +978,8 @@ export default function Menu({ permissions = {} }) {
 
       {/* Modal Thêm món */}
       {showForm && (canCreateMenuItem || recipePreviewItem) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-6 backdrop-blur-[2px]">
-          <div className="max-h-[92vh] w-full max-w-[860px] overflow-hidden rounded-2xl border border-slate-200 bg-[#fafbf7] shadow-[0_28px_80px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-6 backdrop-blur-[2px] motion-safe:animate-[admin-fade-up_180ms_var(--ease-admin-out)_both]">
+          <div className="max-h-[92vh] w-full max-w-[860px] overflow-hidden rounded-2xl border border-slate-200 bg-[#fafbf7] shadow-[0_28px_80px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5 motion-safe:animate-[admin-scale-in_260ms_var(--ease-admin-soft)_both]">
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-wide text-emerald-700">

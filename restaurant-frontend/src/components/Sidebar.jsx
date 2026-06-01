@@ -68,14 +68,14 @@ export default function Sidebar({ isCollapsed, onToggle }) {
   };
 
   return (
-    <aside className={`sticky top-0 flex h-screen ${isCollapsed ? "w-[72px]" : "w-[228px]"} shrink-0 flex-col border-r border-slate-200/80 bg-[#f9faf4] transition-all duration-300 overflow-hidden`}>
+    <aside className={`sticky top-0 flex h-screen ${isCollapsed ? "w-[72px]" : "w-[228px]"} shrink-0 flex-col overflow-hidden border-r border-slate-200/80 bg-[#f9faf4] transition-all duration-300 ease-[var(--ease-admin-out)]`}>
       {/* Slide Toggle Header */}
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} px-4 py-3 border-b border-slate-200/40 shrink-0`}>
         {!isCollapsed && <span className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800">WOW RESTAURANT</span>}
         <button 
           type="button" 
           onClick={onToggle}
-          className="p-1.5 rounded-lg hover:bg-slate-200/60 text-slate-600 transition-colors focus:outline-none"
+          className="rounded-lg p-1.5 text-slate-600 transition-colors duration-150 ease-[var(--ease-admin-out)] hover:bg-slate-200/60 focus:outline-none"
           title={isCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
         >
           <List size={18} weight="bold" />
@@ -87,7 +87,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
         <button
           type="button"
           onClick={() => setAccountOpen((open) => !open)}
-          className={`flex w-full items-center ${isCollapsed ? "justify-center" : "gap-2.5"} rounded-2xl border border-slate-200 bg-white ${isCollapsed ? "p-1.5" : "px-2.5 py-2.5"} text-left shadow-sm transition-colors hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30`}
+          className={`flex w-full items-center ${isCollapsed ? "justify-center" : "gap-2.5"} rounded-2xl border border-slate-200 bg-white ${isCollapsed ? "p-1.5" : "px-2.5 py-2.5"} text-left shadow-sm transition-colors duration-200 ease-[var(--ease-admin-out)] hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30`}
           aria-expanded={accountOpen}
           aria-haspopup="menu"
         >
@@ -117,13 +117,13 @@ export default function Sidebar({ isCollapsed, onToggle }) {
         {accountOpen && (
           <div
             role="menu"
-            className={`absolute ${isCollapsed ? "left-14 w-36" : "left-3 right-3"} top-[64px] z-20 rounded-xl border border-slate-200 bg-white p-1 shadow-xl`}
+            className={`absolute ${isCollapsed ? "left-14 w-36" : "left-3 right-3"} top-[64px] z-20 rounded-xl border border-slate-200 bg-white p-1 shadow-xl motion-safe:animate-[admin-scale-in_180ms_var(--ease-admin-soft)_both]`}
           >
             <button
               type="button"
               onClick={handleLogout}
               role="menuitem"
-              className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-bold text-red-500 transition-colors hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+              className="flex min-h-10 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-bold text-red-500 transition-colors duration-150 ease-[var(--ease-admin-out)] hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20"
             >
               <SignOut size={16} />
               {!isCollapsed && "Đăng xuất"}
@@ -143,7 +143,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
               to={item.path}
               onClick={() => setAccountOpen(false)}
               className={({ isActive }) =>
-                `flex min-h-10 items-center ${isCollapsed ? "justify-center" : "gap-2.5"} rounded-xl ${isCollapsed ? "px-1.5" : "px-3"} text-[13px] transition-colors ${
+                `flex min-h-10 items-center ${isCollapsed ? "justify-center" : "gap-2.5"} rounded-xl ${isCollapsed ? "px-1.5" : "px-3"} text-[13px] transition-colors duration-200 ease-[var(--ease-admin-out)] ${
                   isActive
                     ? "bg-emerald-700 font-black text-white shadow-[0_12px_24px_rgba(4,120,87,0.18)]"
                     : "font-bold text-slate-500 hover:bg-white hover:text-slate-950"
