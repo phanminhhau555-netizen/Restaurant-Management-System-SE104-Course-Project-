@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -17,15 +17,6 @@ const STATUS_CONFIG = {
   dang_dung: { label: "Có khách", color: "bg-blue-100 text-blue-700 border-blue-200" },
   da_dat: { label: "Đã đặt", color: "bg-orange-100 text-orange-700 border-orange-200" },
 };
-
-const CATEGORY_TONES = [
-  "bg-blue-100 text-blue-600",
-  "bg-purple-100 text-purple-600",
-  "bg-yellow-100 text-yellow-700",
-  "bg-pink-100 text-pink-600",
-  "bg-teal-100 text-teal-700",
-  "bg-orange-100 text-orange-700",
-];
 
 const renderStatusBadges = (item) => {
   const badges = [];
@@ -90,15 +81,7 @@ export default function TableOrder() {
   const [serverItemsList, setServerItemsList] = useState([]);
   const ITEMS_PER_PAGE = 12;
 
-  useEffect(() => {
-    fetchData();
-  }, [tableId]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [tableRes, menuRes, categoriesRes, activeOrdersRes] = await Promise.all([
         API.get(`/api/tables/${tableId}`),
@@ -199,12 +182,17 @@ export default function TableOrder() {
           serverParts: []
         })));
       }
-    } catch (err) {
+    } catch {
       setError("Không tải được dữ liệu.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [tableId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchData();
+  }, [fetchData]);
 
   // Tự động lưu giỏ hàng nháp vào localStorage khi thay đổi
   useEffect(() => {
@@ -331,6 +319,7 @@ export default function TableOrder() {
   useEffect(() => {
     if (loading || menu.length === 0 || cart.length === 0) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCart((prev) => {
       let changed = false;
       const nextCart = prev
@@ -350,7 +339,8 @@ export default function TableOrder() {
 
       return changed ? nextCart : prev;
     });
-  }, [loading, menu]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, menu, cart.length]);
 
   const totalPages = Math.max(1, Math.ceil(filteredMenu.length / ITEMS_PER_PAGE));
   const activePage = currentPage > totalPages ? totalPages : currentPage;
@@ -452,9 +442,6 @@ export default function TableOrder() {
   const totalAmount = cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
   const totalItems = cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
-  const getCategoryTone = (id) =>
-    CATEGORY_TONES[Math.abs(Number(id) || 0) % CATEGORY_TONES.length];
-
   const handleConfirmOrder = async () => {
     if (cart.length === 0) return;
     if (table?.status !== "dang_dung") {
@@ -544,8 +531,12 @@ export default function TableOrder() {
 
   if (loading) {
     return (
-      <div className="admin-soft-grid flex min-h-screen items-center justify-center bg-[#eff1ea]">
-        <p className="text-sm font-semibold text-slate-400">Đang tải...</p>
+      <div className="admin-soft-grid flex min-h-screen items-center justify-center bg-[#eff1ea] p-4">
+        <div className="admin-panel-pad w-full max-w-sm space-y-3 text-center">
+          <div className="mx-auto h-10 w-10 animate-pulse rounded-full bg-emerald-100" />
+          <p className="text-sm font-black text-slate-700">Đang tải bàn và thực đơn</p>
+          <p className="text-xs font-semibold text-slate-400">Dữ liệu order sẽ sẵn sàng trong giây lát.</p>
+        </div>
       </div>
     );
   }
@@ -553,7 +544,7 @@ export default function TableOrder() {
   const statusConfig = STATUS_CONFIG[table?.status] || STATUS_CONFIG.trong;
 
   return (
-    <div className="admin-page flex h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+    <div className="admin-page flex min-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-[0_18px_44px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-2rem)]">
       {/* Header */}
       <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-[#fbfbf8]/95 px-5 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.04)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between gap-4">
@@ -562,6 +553,7 @@ export default function TableOrder() {
               <button
                 onClick={() => navigate("/staff/tables")}
                 className="admin-secondary-btn h-9 w-9 p-0"
+                aria-label="Quay lại sơ đồ bàn"
               >
                 <ArrowLeft size={16} weight="bold" />
               </button>
@@ -574,16 +566,16 @@ export default function TableOrder() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center justify-end gap-3">
             {/* Thông báo */}
             {success && (
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+              <div className="hidden max-w-sm items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 md:flex">
                 <CheckCircle size={14} weight="fill" />
                 {success}
               </div>
             )}
             {error && (
-              <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+              <div className="hidden max-w-sm items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 md:flex">
                 <WarningCircle size={14} weight="duotone" />
                 {error}
               </div>
@@ -597,13 +589,30 @@ export default function TableOrder() {
         </div>
       </header>
 
+      {(success || error) && (
+        <div className="px-3 pt-3 md:hidden">
+          {success && (
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+              <CheckCircle size={14} weight="fill" />
+              {success}
+            </div>
+          )}
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+              <WarningCircle size={14} weight="duotone" />
+              {error}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Body */}
-      <div className="mx-auto flex w-full max-w-[1480px] flex-1 gap-2 overflow-hidden p-4">
+      <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-3 overflow-auto p-3 sm:p-4 xl:flex-row xl:gap-2 xl:overflow-hidden">
 
         {/* Giỏ hàng */}
         <div 
-          className="flex shrink-0 flex-col overflow-hidden rounded-[14px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.045)]"
-          style={{ width: `${cartPanelWidth}px` }}
+          className="flex max-h-[70vh] w-full flex-col overflow-hidden rounded-[14px] border border-slate-200/80 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.045)] xl:max-h-none xl:w-[var(--cart-width)] xl:shrink-0"
+          style={{ "--cart-width": `${cartPanelWidth}px` }}
         >
 
           {/* Cart Header */}
@@ -617,19 +626,23 @@ export default function TableOrder() {
                 {totalItems} món
               </span>
             </div>
+            <p className="mt-1 text-[11px] font-semibold text-slate-400">
+              Tick chọn món cần gửi bếp khi xác nhận order.
+            </p>
           </div>
 
           {/* Cart Items */}
           <div className="flex-1 overflow-auto p-2">
             {cart.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-12 text-center text-slate-400">
                 <ForkKnife size={32} className="mb-2 text-slate-300" weight="duotone" />
-                <p className="text-xs font-semibold">Bổ sung món ngon vào giỏ</p>
+                <p className="text-sm font-black text-slate-500">Chưa có món trong giỏ</p>
+                <p className="mt-1 text-xs font-semibold text-slate-400">Chọn món ở thực đơn bên phải để bắt đầu order.</p>
               </div>
             ) : (
-              <table className="w-full text-[11px] border-collapse">
+              <table className="w-full border-collapse text-[11px]">
                 <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[9px] bg-slate-50/50">
+                  <tr className="border-b border-slate-100 bg-slate-50/50 text-[9px] font-bold uppercase tracking-wider text-slate-400">
                     <th className="p-1 text-center w-6"></th>
                     <th className="p-1.5 text-left">Tên món</th>
                     <th className="p-1.5 text-center w-12">ĐVT</th>
@@ -646,7 +659,8 @@ export default function TableOrder() {
                           type="checkbox"
                           checked={item.sendToKitchen !== false}
                           onChange={() => toggleSendToKitchen(item.id)}
-                          className="w-3.5 h-3.5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer"
+                          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-emerald-700 focus:ring-emerald-500"
+                          aria-label={`Gửi ${item.name} xuống bếp`}
                           title="Gửi xuống bếp khi xác nhận"
                         />
                       </td>
@@ -658,13 +672,14 @@ export default function TableOrder() {
                       </td>
                       <td className="p-1.5 text-center text-slate-500 capitalize align-middle">{item.unit || "phần"}</td>
                       <td className="p-1.5 text-center align-middle">
-                        <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-1 py-0.5">
+                        <div className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-1 py-0.5">
                           <button
                             type="button"
                             onClick={() => removeFromCart(item.id)}
-                            className="flex h-5 w-5 items-center justify-center rounded text-slate-500 transition-colors hover:bg-slate-100"
+                            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                            aria-label={`Giảm số lượng ${item.name}`}
                           >
-                            <Minus size={9} weight="bold" />
+                            <Minus size={11} weight="bold" />
                           </button>
                           <input
                             type="number"
@@ -672,17 +687,19 @@ export default function TableOrder() {
                             value={item.quantity}
                             onChange={(e) => updateQuantity(item.id, e.target.value)}
                             onBlur={(e) => handleQuantityBlur(item.id, e.target.value)}
-                            className="w-8 text-center text-xs font-black text-slate-800 bg-transparent focus:outline-none border-b border-dashed border-slate-300 focus:border-slate-500 py-0"
+                            className="w-10 border-b border-dashed border-slate-300 bg-transparent py-0 text-center text-xs font-black text-slate-800 focus:border-slate-500 focus:outline-none"
                             title="Chỉnh số lượng (chấp nhận số thập phân)"
+                            aria-label={`Số lượng ${item.name}`}
                           />
                           <button
                             type="button"
                             onClick={() => addToCart(item)}
                             disabled={!canAddMore(item.id)}
-                            className="flex h-5 w-5 items-center justify-center rounded text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                            className="flex h-7 w-7 items-center justify-center rounded-md text-emerald-700 transition-colors hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
                             title={canAddMore(item.id) ? "Tăng số lượng" : "Đã đạt giới hạn tồn kho"}
+                            aria-label={`Tăng số lượng ${item.name}`}
                           >
-                            <Plus size={9} weight="bold" />
+                            <Plus size={11} weight="bold" />
                           </button>
                         </div>
                       </td>
@@ -694,10 +711,11 @@ export default function TableOrder() {
                             value={item.price}
                             onChange={(e) => updatePrice(item.id, e.target.value)}
                             onBlur={(e) => handlePriceBlur(item.id, e.target.value)}
-                            className="w-14 text-[11px] text-green-600 font-black border-b border-dashed border-green-300 focus:border-green-500 focus:outline-none bg-transparent py-0 px-0.5 text-right"
+                            className="w-16 border-b border-dashed border-emerald-300 bg-transparent px-0.5 py-0 text-right text-[11px] font-black text-emerald-700 focus:border-emerald-500 focus:outline-none"
                             title="Chỉnh đơn giá món (chỉ ở bàn này)"
+                            aria-label={`Đơn giá ${item.name}`}
                           />
-                          <span className="text-[10px] text-green-600 font-bold">đ</span>
+                          <span className="text-[10px] font-bold text-emerald-700">đ</span>
                         </div>
                       </td>
                       <td className="p-1.5 text-right font-black text-slate-800 align-middle">
@@ -751,15 +769,15 @@ export default function TableOrder() {
             document.addEventListener("mousemove", handleMouseMove);
             document.addEventListener("mouseup", handleMouseUp);
           }}
-          className="w-1 bg-slate-200 hover:bg-emerald-600 active:bg-emerald-700 cursor-col-resize self-stretch transition-all duration-150 mx-1 rounded"
+          className="mx-1 hidden w-1 cursor-col-resize self-stretch rounded bg-slate-200 transition-all duration-150 hover:bg-emerald-600 active:bg-emerald-700 xl:block"
           title="Kéo để chỉnh kích cỡ"
         />
 
         {/* Menu */}
-        <div className="flex-1 overflow-hidden flex flex-col justify-between p-5 bg-white rounded-2xl border border-slate-200/60 shadow-sm">
+        <div className="flex min-h-[520px] flex-1 flex-col justify-between overflow-hidden rounded-[14px] border border-slate-200/80 bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.045)] sm:p-5 xl:min-h-0">
           <div className="flex-1 overflow-auto">
             {/* Category Filter & Search Bar */}
-            <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+            <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex gap-2 flex-wrap">
                 {allCategories.map((cat) => (
                   <button
@@ -768,10 +786,10 @@ export default function TableOrder() {
                       setActiveCategory(cat.id);
                       setCurrentPage(1);
                     }}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                    className={`min-h-9 rounded-xl border px-3 text-xs font-black transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
                       activeCategory === cat.id
-                        ? "bg-emerald-700 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        ? "border-emerald-700 bg-emerald-700 text-white"
+                        : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
                     }`}
                   >
                     {cat.label}
@@ -785,24 +803,36 @@ export default function TableOrder() {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="Tìm món ăn..."
-                  className="w-full h-8.5 rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                  className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                 />
               </div>
             </div>
 
             {/* Menu Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-              {paginatedMenu.map((item) => {
+            {paginatedMenu.length === 0 ? (
+              <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center">
+                <MagnifyingGlass size={32} weight="duotone" className="mb-2 text-slate-300" />
+                <p className="text-sm font-black text-slate-600">Không tìm thấy món phù hợp</p>
+                <p className="mt-1 text-xs font-semibold text-slate-400">Thử đổi danh mục hoặc nhập từ khóa khác.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {paginatedMenu.map((item) => {
                 const qty = getCartQty(item.id);
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center gap-2 bg-white rounded-xl border border-slate-100 p-1.5 hover:shadow-sm transition-all"
+                    className={`flex min-h-[62px] items-center gap-2 rounded-xl border bg-white p-2 transition-all hover:border-slate-200 hover:bg-slate-50 ${
+                      qty > 0 ? "border-emerald-200 ring-1 ring-emerald-100" : "border-slate-100"
+                    }`}
                   >
                     {/* Ảnh siêu nhỏ */}
-                    <div className="h-10 w-10 shrink-0 bg-slate-50 rounded-lg flex items-center justify-center overflow-hidden border border-slate-100">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-100 bg-slate-50">
                       {item.image_url ? (
                         <img
                           src={item.image_url}
@@ -810,7 +840,7 @@ export default function TableOrder() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-sm font-semibold text-slate-300">Mon</span>
+                        <ForkKnife size={18} weight="duotone" className="text-slate-300" />
                       )}
                     </div>
 
@@ -834,8 +864,9 @@ export default function TableOrder() {
                       <button
                         onClick={() => addToCart(item)}
                         disabled={!canAddMore(item.id)}
-                        className="h-6 w-6 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-xs transition-colors shrink-0 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-300"
                         title={canAddMore(item.id) ? "Thêm món" : "Đã hết số lượng có thể order"}
+                        aria-label={`Thêm ${item.name}`}
                       >
                         +
                       </button>
@@ -843,7 +874,8 @@ export default function TableOrder() {
                       <div className="flex items-center gap-0.5 shrink-0">
                         <button
                           onClick={() => removeFromCart(item.id)}
-                          className="h-5 w-5 bg-slate-100 hover:bg-slate-200 rounded flex items-center justify-center font-bold text-[10px] text-slate-600"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-bold text-slate-600 hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                          aria-label={`Giảm ${item.name}`}
                         >
                           -
                         </button>
@@ -851,8 +883,9 @@ export default function TableOrder() {
                         <button
                           onClick={() => addToCart(item)}
                           disabled={!canAddMore(item.id)}
-                          className="h-5 w-5 bg-emerald-600 hover:bg-emerald-700 rounded flex items-center justify-center font-bold text-[10px] text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-[10px] font-bold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                           title={canAddMore(item.id) ? "Tăng số lượng" : "Đã đạt giới hạn tồn kho"}
+                          aria-label={`Tăng ${item.name}`}
                         >
                           +
                         </button>
@@ -860,8 +893,9 @@ export default function TableOrder() {
                     )}
                   </div>
                 );
-              })}
-            </div>
+                })}
+              </div>
+            )}
           </div>
 
           {/* Pagination Controls */}
