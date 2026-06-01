@@ -62,6 +62,7 @@ export default function Menu({ permissions = {} }) {
     description: "",
     category_id: 1,
     image_url: "",
+    is_visible: true,
   });
   const [recipeRows, setRecipeRows] = useState([
     { ingredient_id: "", amount: "" },
@@ -193,7 +194,15 @@ export default function Menu({ permissions = {} }) {
       ...item,
       recipes: itemRecipes,
     });
-    setEditRecipeRows(
+    setForm({
+      name: item.name || "",
+      price: item.price ?? "",
+      description: item.description || "",
+      category_id: item.category_id || categories[0]?.id || "",
+      image_url: item.image_url || "",
+      is_visible: Boolean(item.is_visible),
+    });
+    setRecipeRows(
       itemRecipes.length > 0
         ? itemRecipes.map((recipe) => ({
           ingredient_id: String(recipe.ingredient_id),
@@ -202,6 +211,7 @@ export default function Menu({ permissions = {} }) {
         : [{ ingredient_id: "", amount: "" }],
     );
     setEditingRecipe(false);
+    setShowForm(true);
   };
 
   const handleRecipePreviewKeyDown = (event, item) => {
@@ -218,6 +228,7 @@ export default function Menu({ permissions = {} }) {
       description: "",
       category_id: categories[0]?.id || "",
       image_url: "",
+      is_visible: true,
     });
     setRecipeRows([{ ingredient_id: "", amount: "" }]);
   };
@@ -381,7 +392,7 @@ export default function Menu({ permissions = {} }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.category_id) {
-      setError("Hãy tạo danh mục trước khi thêm món.");
+      setError("Hãy tạo danh mục trước khi lưu món.");
       return;
     }
 
@@ -389,31 +400,50 @@ export default function Menu({ permissions = {} }) {
     setError("");
     setSuccess("");
     try {
-      const menuRes = await API.post("/api/menu", {
-        ...form,
-        category_id: Number(form.category_id),
-      });
-      const menuItemId = menuRes.data.id;
       const validRecipeRows = recipeRows.filter((row) => row.ingredient_id && Number(row.amount) > 0);
+      let menuItemId = recipePreviewItem?.id;
 
-      if (validRecipeRows.length > 0) {
-        await Promise.all(
-          validRecipeRows.map((row) =>
-            API.post("/api/inventory/recipes", {
-              menu_item_id: menuItemId,
-              ingredient_id: Number(row.ingredient_id),
-              amount: Number(row.amount),
-            }),
-          ),
-        );
+      if (recipePreviewItem) {
+        await API.put(`/api/menu/${recipePreviewItem.id}`, {
+          ...form,
+          price: Number(form.price),
+          category_id: Number(form.category_id),
+          is_visible: Boolean(form.is_visible),
+        });
+        await API.put(`/api/inventory/recipes/${recipePreviewItem.id}`, {
+          recipes: validRecipeRows.map((row) => ({
+            ingredient_id: Number(row.ingredient_id),
+            amount: Number(row.amount),
+          })),
+        });
+      } else {
+        const menuRes = await API.post("/api/menu", {
+          ...form,
+          price: Number(form.price),
+          category_id: Number(form.category_id),
+        });
+        menuItemId = menuRes.data.id;
+
+        if (validRecipeRows.length > 0) {
+          await Promise.all(
+            validRecipeRows.map((row) =>
+              API.post("/api/inventory/recipes", {
+                menu_item_id: menuItemId,
+                ingredient_id: Number(row.ingredient_id),
+                amount: Number(row.amount),
+              }),
+            ),
+          );
+        }
       }
 
-      setSuccess("Thêm món ăn thành công!");
+      setSuccess(recipePreviewItem ? "Cập nhật món ăn thành công!" : "Thêm món ăn thành công!");
       resetForm();
+      setRecipePreviewItem(null);
       setShowForm(false);
       fetchMenu();
     } catch (err) {
-      setError(err.response?.data?.message || "Lỗi thêm món ăn!");
+      setError(err.response?.data?.message || "Không lưu được món ăn.");
     } finally {
       setSubmitting(false);
     }
@@ -461,7 +491,15 @@ export default function Menu({ permissions = {} }) {
             <h1 className="admin-title">Món ăn & công thức</h1>
           </div>
           {canCreateMenuItem ? (
-            <button type="button" onClick={() => setShowForm(true)} className="admin-primary-btn">
+            <button
+              type="button"
+              onClick={() => {
+                setRecipePreviewItem(null);
+                resetForm();
+                setShowForm(true);
+              }}
+              className="admin-primary-btn"
+            >
               <Plus size={18} weight="bold" />
               Thêm món mới
             </button>
@@ -742,7 +780,7 @@ export default function Menu({ permissions = {} }) {
         </div>
       )}
 
-      {recipePreviewItem && (
+      {recipePreviewItem && !showForm && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-gray-900/20 px-4 py-6 backdrop-blur-[1px]"
           onClick={() => setRecipePreviewItem(null)}
@@ -926,124 +964,170 @@ export default function Menu({ permissions = {} }) {
       )}
 
       {/* Modal Thêm món */}
-      {showForm && canCreateMenuItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-800">Thêm món ăn mới</h2>
+      {showForm && (canCreateMenuItem || recipePreviewItem) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-6 backdrop-blur-[2px]">
+          <div className="max-h-[92vh] w-full max-w-[860px] overflow-hidden rounded-2xl border border-slate-200 bg-[#fafbf7] shadow-[0_28px_80px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-wide text-emerald-700">
+                  Thực đơn
+                </p>
+                <h2 className="mt-1 text-xl font-black text-slate-950">
+                  {recipePreviewItem ? "Chỉnh sửa món ăn" : "Thêm món ăn mới"}
+                </h2>
+              </div>
               <button
-                onClick={() => setShowForm(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl"
+                type="button"
+                onClick={() => {
+                  setShowForm(false);
+                  setRecipePreviewItem(null);
+                  resetForm();
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                aria-label="Đóng form món ăn"
               >
-                ✕
+                <X size={17} weight="bold" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Tên món */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tên món ăn
-                </label>
-                <input
-                  type="text"
-                  placeholder="Nhập tên món ăn..."
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  required
-                />
-              </div>
-
-              {/* Danh mục + Giá */}
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phân loại
-                  </label>
-                  <select
-                    value={form.category_id}
-                    onChange={(e) => setForm({ ...form, category_id: Number(e.target.value) })}
-                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required
-                  >
-                    {categories.length === 0 ? (
-                      <option value="">Chưa có danh mục</option>
-                    ) : null}
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Giá bán (VNĐ)
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="85000"
-                    value={form.price}
-                    onChange={(e) => setForm({ ...form, price: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Mô tả */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mô tả món ăn
-                </label>
-                <textarea
-                  placeholder="Nhập mô tả chi tiết về cách chế biến hoặc hương vị..."
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                />
-              </div>
-
-              {/* URL ảnh */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  URL hình ảnh
-                </label>
-                <input
-                  type="text"
-                  placeholder="https://..."
-                  value={form.image_url}
-                  onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-
-              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
+            <form onSubmit={handleSubmit} className="admin-menu-scroll max-h-[calc(92vh-90px)] overflow-y-auto">
+              <div className="grid gap-5 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+                <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-800">Nguyên liệu công thức</h3>
+                    <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                      Tên món ăn
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Nhập tên món ăn..."
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                      required
+                    />
                   </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                        Phân loại
+                      </label>
+                      <select
+                        value={form.category_id}
+                        onChange={(e) => setForm({ ...form, category_id: Number(e.target.value) })}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                        required
+                      >
+                        {categories.length === 0 ? (
+                          <option value="">Chưa có danh mục</option>
+                        ) : null}
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                        Giá bán
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="85000"
+                        value={form.price}
+                        onChange={(e) => setForm({ ...form, price: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-sm font-bold text-slate-700">
+                      Mô tả món ăn
+                    </label>
+                    <textarea
+                      placeholder="Nhập mô tả chi tiết về cách chế biến hoặc hương vị..."
+                      value={form.description}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                      rows={5}
+                      className="w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                    <div className="flex aspect-[4/3] items-center justify-center bg-slate-100">
+                      {form.image_url ? (
+                        <img
+                          src={form.image_url}
+                          alt={form.name || "Món ăn"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ForkKnife size={42} className="text-slate-300" weight="duotone" />
+                      )}
+                    </div>
+                    <div className="border-t border-slate-100 p-3">
+                      <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                        URL hình ảnh
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="https://..."
+                        value={form.image_url}
+                        onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+                    <p className="text-sm font-bold text-slate-800">Trạng thái bán</p>
+                    <button
+                      type="button"
+                      onClick={() => setForm((current) => ({ ...current, is_visible: !current.is_visible }))}
+                      className={`rounded-lg px-3 py-2 text-xs font-black transition-colors ${
+                        form.is_visible
+                          ? "bg-emerald-700 text-white hover:bg-emerald-800"
+                          : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+                      }`}
+                    >
+                      {form.is_visible ? "Đang bán" : "Đã ẩn"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 px-6 py-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 className="text-sm font-black text-slate-900">Nguyên liệu công thức</h3>
                   <button
                     type="button"
                     onClick={addRecipeRow}
-                    className="shrink-0 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-600 transition-colors hover:bg-green-100"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
                   >
-                    + Thêm nguyên liệu
+                    <Plus size={14} weight="bold" />
+                    Thêm nguyên liệu
                   </button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {recipeRows.map((row, index) => {
                     const selectedIngredient = getIngredient(row.ingredient_id);
 
                     return (
-                      <div key={index} className="grid gap-2 sm:grid-cols-[1fr_150px_44px]">
-                        <label className="block text-xs font-medium text-gray-600">
+                      <div
+                        key={index}
+                        className="grid items-end gap-2 rounded-xl border border-slate-200 bg-white p-3 sm:grid-cols-[1fr_160px_40px]"
+                      >
+                        <label className="block text-xs font-bold text-slate-600">
                           Nguyên liệu
                           <select
                             value={row.ingredient_id}
                             onChange={(e) => handleRecipeRowChange(index, "ingredient_id", e.target.value)}
-                            className="mt-1 min-h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500"
+                            className="mt-1 min-h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                           >
                             <option value="">Chọn nguyên liệu</option>
                             {ingredients.map((ingredient) => (
@@ -1054,19 +1138,19 @@ export default function Menu({ permissions = {} }) {
                           </select>
                         </label>
 
-                        <label className="block text-xs font-medium text-gray-600">
+                        <label className="block text-xs font-bold text-slate-600">
                           Định lượng
-                          <div className="mt-1 flex min-h-10 overflow-hidden rounded-lg border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-green-500">
+                          <div className="mt-1 flex min-h-10 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-100">
                             <input
                               type="number"
                               min="0"
                               step="0.01"
                               value={row.amount}
                               onChange={(e) => handleRecipeRowChange(index, "amount", e.target.value)}
-                              className="min-w-0 flex-1 px-3 text-sm text-gray-800 outline-none"
+                              className="min-w-0 flex-1 bg-transparent px-3 text-sm font-semibold text-slate-800 outline-none"
                               placeholder="0"
                             />
-                            <span className="flex items-center border-l border-gray-200 bg-gray-50 px-2 text-xs font-semibold text-gray-500">
+                            <span className="flex items-center border-l border-slate-200 bg-white px-2 text-xs font-bold text-slate-500">
                               {selectedIngredient?.unit || "đv"}
                             </span>
                           </div>
@@ -1075,10 +1159,10 @@ export default function Menu({ permissions = {} }) {
                         <button
                           type="button"
                           onClick={() => removeRecipeRow(index)}
-                          className="mt-5 flex h-10 w-10 items-center justify-center rounded-lg text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          className="flex h-10 w-10 items-center justify-center rounded-lg text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
                           aria-label="Xóa dòng nguyên liệu"
                         >
-                          ×
+                          <X size={16} weight="bold" />
                         </button>
                       </div>
                     );
@@ -1086,27 +1170,30 @@ export default function Menu({ permissions = {} }) {
                 </div>
 
                 {ingredients.length === 0 && (
-                  <p className="mt-3 rounded-lg bg-yellow-50 px-3 py-2 text-xs text-yellow-700">
+                  <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
                     Chưa có nguyên liệu trong kho. Hãy thêm nguyên liệu ở trang Nhà bếp trước.
                   </p>
                 )}
               </div>
 
-              {/* Buttons */}
-              <div className="flex gap-3 pt-2">
+              <div className="sticky bottom-0 flex gap-3 border-t border-slate-200 bg-[#fafbf7]/95 px-6 py-4 backdrop-blur">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="flex-1 border border-gray-200 text-gray-600 rounded-lg py-2.5 text-sm hover:bg-gray-50 transition-colors"
+                  onClick={() => {
+                    setShowForm(false);
+                    setRecipePreviewItem(null);
+                    resetForm();
+                  }}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded-lg py-2.5 text-sm font-medium transition-colors disabled:opacity-50"
+                  className="flex-1 rounded-xl bg-emerald-700 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
                 >
-                  {submitting ? "Đang lưu..." : "Lưu món ăn"}
+                  {submitting ? "Đang lưu..." : recipePreviewItem ? "Lưu thay đổi" : "Lưu món ăn"}
                 </button>
               </div>
             </form>
