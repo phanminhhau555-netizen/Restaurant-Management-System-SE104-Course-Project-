@@ -49,3 +49,33 @@ exports.updateConfig = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   }
 };
+
+// LẤY IP LAN CỦA MÁY CHỦ
+exports.getServerIP = async (req, res) => {
+  const os = require('os');
+  try {
+    const interfaces = os.networkInterfaces();
+    let bestIP = '';
+    let backupIP = '';
+    for (const name of Object.keys(interfaces)) {
+      for (const net of interfaces[name]) {
+        if (net.family === 'IPv4' && !net.internal) {
+          const ip = net.address;
+          // Ưu tiên các dải IP local Wi-Fi/LAN chuẩn: 192.168.x.x, 10.x.x.x, 172.16.x.x - 172.31.x.x
+          if (ip.startsWith('192.168.') || ip.startsWith('10.') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) {
+            bestIP = ip;
+            break;
+          } else {
+            backupIP = ip;
+          }
+        }
+      }
+      if (bestIP) break;
+    }
+    res.json({ ip: bestIP || backupIP || '127.0.0.1' });
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi server', error: err.message });
+  }
+};
+
+

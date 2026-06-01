@@ -41,15 +41,28 @@ export default function TablesPage() {
   const [cardSize, setCardSize] = useState(160);
   const [rightPanelWidth, setRightPanelWidth] = useState(240);
   const [selectedQRTable, setSelectedQRTable] = useState(null);
+  const [serverIP, setServerIP] = useState("");
 
   useEffect(() => {
     fetchTables();
     
+    API.get("/api/settings/server-ip")
+      .then((res) => {
+        if (res.data && res.data.ip) {
+          setServerIP(res.data.ip);
+        }
+      })
+      .catch((err) => console.error("Error fetching server IP:", err));
+
     // Đóng context menu khi click bất kỳ đâu trên màn hình
     const closeMenu = () => setContextMenu(null);
     window.addEventListener("click", closeMenu);
     return () => window.removeEventListener("click", closeMenu);
   }, []);
+
+  const qrBaseUrl = serverIP && serverIP !== "127.0.0.1"
+    ? `http://${serverIP}:${window.location.port || "5173"}`
+    : window.location.origin;
 
   const fetchTables = async () => {
     try {
@@ -561,7 +574,7 @@ export default function TablesPage() {
             <div className="mx-auto my-6 flex h-60 w-60 items-center justify-center border border-slate-100 rounded-xl bg-slate-50 p-3 shadow-inner">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
-                  `${window.location.origin}/staff/orders/${selectedQRTable.id}?mode=qr`
+                  `${qrBaseUrl}/staff/orders/${selectedQRTable.id}?mode=qr`
                 )}`}
                 alt={`QR code for ${selectedQRTable.name}`}
                 className="h-full w-full object-contain"
@@ -575,7 +588,7 @@ export default function TablesPage() {
             <div className="flex gap-3">
               <a
                 href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(
-                  `${window.location.origin}/staff/orders/${selectedQRTable.id}?mode=qr`
+                  `${qrBaseUrl}/staff/orders/${selectedQRTable.id}?mode=qr`
                 )}`}
                 target="_blank"
                 rel="noreferrer"

@@ -21,7 +21,13 @@ export default function Login() {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      navigate(getDefaultPath(res.data.user));
+      const redirectPath = sessionStorage.getItem("redirectAfterLogin");
+      if (redirectPath) {
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(redirectPath);
+      } else {
+        navigate(getDefaultPath(res.data.user));
+      }
     } catch {
       setError("Sai tên đăng nhập hoặc mật khẩu!");
     } finally {

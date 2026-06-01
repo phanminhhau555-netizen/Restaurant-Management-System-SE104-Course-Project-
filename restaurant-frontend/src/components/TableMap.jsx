@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import API from "../services/api";
 
 const STATUS_CONFIG = {
   trong: {
@@ -51,6 +52,21 @@ export default function TableMap({
   showSummary = true,
 }) {
   const [selectedQRTable, setSelectedQRTable] = useState(null);
+  const [serverIP, setServerIP] = useState("");
+
+  useEffect(() => {
+    API.get("/api/settings/server-ip")
+      .then((res) => {
+        if (res.data && res.data.ip) {
+          setServerIP(res.data.ip);
+        }
+      })
+      .catch((err) => console.error("Error fetching server IP:", err));
+  }, []);
+
+  const qrBaseUrl = serverIP && serverIP !== "127.0.0.1"
+    ? `http://${serverIP}:${window.location.port || "5173"}`
+    : window.location.origin;
 
   const filteredTables = activeArea
     ? tables.filter((table) => table.area_id === activeArea)
@@ -304,7 +320,7 @@ export default function TableMap({
             <div className="mx-auto my-6 flex h-60 w-60 items-center justify-center border border-slate-100 rounded-xl bg-slate-50 p-3 shadow-inner">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
-                  `${window.location.origin}/staff/orders/${selectedQRTable.id}?mode=qr`
+                  `${qrBaseUrl}/staff/orders/${selectedQRTable.id}?mode=qr`
                 )}`}
                 alt={`QR code for ${selectedQRTable.name}`}
                 className="h-full w-full object-contain"
@@ -318,7 +334,7 @@ export default function TableMap({
             <div className="flex gap-3">
               <a
                 href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(
-                  `${window.location.origin}/staff/orders/${selectedQRTable.id}?mode=qr`
+                  `${qrBaseUrl}/staff/orders/${selectedQRTable.id}?mode=qr`
                 )}`}
                 target="_blank"
                 rel="noreferrer"

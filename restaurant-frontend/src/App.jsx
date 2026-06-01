@@ -24,7 +24,14 @@ import AdminCustomersPage from "./pages/admin/Customers";
 function PrivateRoute({ children, roles }) {
   const { isAuthenticated, user, defaultPath } = useAuth();
 
-  if (!isAuthenticated) return <Navigate to="/login" />;
+  // Bỏ qua đăng nhập tuyệt đối nếu là chế độ QR tự phục vụ
+  const isQR = window.location.search.includes("mode=qr");
+  if (isQR) return children;
+
+  if (!isAuthenticated) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.pathname + window.location.search);
+    return <Navigate to="/login" />;
+  }
   if (roles && !canAccess(user, roles)) return <Navigate to={defaultPath} />;
 
   return children;
