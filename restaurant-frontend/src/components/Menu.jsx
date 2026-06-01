@@ -188,6 +188,12 @@ export default function Menu({ permissions = {} }) {
   const getMenuItemRecipes = (menuItemId) =>
     recipes.filter((recipe) => String(recipe.menu_item_id) === String(menuItemId));
 
+  const closeMenuForm = () => {
+    setShowForm(false);
+    setRecipePreviewItem(null);
+    resetForm();
+  };
+
   const showRecipePreview = (item) => {
     const itemRecipes = getMenuItemRecipes(item.id);
     setRecipePreviewItem({
@@ -978,8 +984,14 @@ export default function Menu({ permissions = {} }) {
 
       {/* Modal Thêm món */}
       {showForm && (canCreateMenuItem || recipePreviewItem) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-6 backdrop-blur-[2px] motion-safe:animate-[admin-fade-up_180ms_var(--ease-admin-out)_both]">
-          <div className="max-h-[92vh] w-full max-w-[860px] overflow-hidden rounded-2xl border border-slate-200 bg-[#fafbf7] shadow-[0_28px_80px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5 motion-safe:animate-[admin-scale-in_260ms_var(--ease-admin-soft)_both]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-6 backdrop-blur-[2px] motion-safe:animate-[admin-fade-up_180ms_var(--ease-admin-out)_both]"
+          onClick={closeMenuForm}
+        >
+          <div
+            className="max-h-[92vh] w-full max-w-[860px] overflow-hidden rounded-2xl border border-slate-200 bg-[#fafbf7] shadow-[0_28px_80px_rgba(15,23,42,0.22)] ring-1 ring-slate-900/5 motion-safe:animate-[admin-scale-in_260ms_var(--ease-admin-soft)_both]"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-white px-6 py-5">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-wide text-emerald-700">
@@ -991,11 +1003,7 @@ export default function Menu({ permissions = {} }) {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setRecipePreviewItem(null);
-                  resetForm();
-                }}
+                onClick={closeMenuForm}
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 aria-label="Đóng form món ăn"
               >
@@ -1192,11 +1200,7 @@ export default function Menu({ permissions = {} }) {
               <div className="sticky bottom-0 flex gap-3 border-t border-slate-200 bg-[#fafbf7]/95 px-6 py-4 backdrop-blur">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                    setRecipePreviewItem(null);
-                    resetForm();
-                  }}
+                  onClick={closeMenuForm}
                   className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50"
                 >
                   Hủy bỏ
