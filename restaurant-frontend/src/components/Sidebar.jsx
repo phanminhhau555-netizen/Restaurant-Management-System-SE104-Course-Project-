@@ -5,7 +5,6 @@ import {
   ChefHat,
   GearSix,
   ListChecks,
-  SlidersHorizontal,
   SignOut,
   SquaresFour,
   UserCircle,
@@ -18,14 +17,14 @@ import useAuth from "../hooks/useAuth";
 import { ROLES } from "../utils/permissions";
 
 const menuItems = [
-  { path: "/admin/dashboard", label: "Tổng quan", icon: SquaresFour },
-  { path: "/admin/menu", label: "Thực đơn", icon: ForkKnife },
-  { path: "/admin/warehouse", label: "Kho hàng", icon: ChefHat },
+  { path: "/admin/dashboard", label: "Bảng điều khiển", icon: SquaresFour },
   { path: "/admin/reports", label: "Báo cáo", icon: ChartBar },
-  { path: "/admin/settings", label: "Cài đặt", icon: GearSix },
-  { path: "/admin/staff", label: "Nhân sự", icon: UsersThree },
-  { path: "/admin/tables", label: "Bàn", icon: UsersThree },
+  { path: "/admin/tables", label: "Bàn", icon: ListChecks },
+  { path: "/admin/menu", label: "Thực đơn", icon: ForkKnife },
   { path: "/admin/customers", label: "Khách hàng", icon: UsersThree },
+  { path: "/admin/warehouse", label: "Kho hàng", icon: ChefHat },
+  { path: "/admin/staff", label: "Nhân sự", icon: UsersThree },
+  { path: "/admin/settings", label: "Cài đặt", icon: GearSix },
 ];
 
 const kitchenItems = [
@@ -35,9 +34,9 @@ const kitchenItems = [
 ];
 
 const staffItems = [
-  { path: "/staff/tables", label: "Order món", icon: ForkKnife }, 
-  { path: "/staff/sales", label: "Quản lý bán hàng", icon: ListChecks },
-  { path: "/staff/customers", label: "Khách hàng", icon: UsersThree }
+  { path: "/staff/tables", label: "Order món", icon: ForkKnife },
+  { path: "/staff/sales", label: "Bán hàng", icon: ListChecks },
+  { path: "/staff/customers", label: "Khách hàng", icon: UsersThree },
 ];
 
 const roleMenuItems = {
@@ -134,7 +133,7 @@ export default function Sidebar({ isCollapsed, onToggle }) {
       </div>
 
       {/* Menu */}
-      <nav className={`flex-1 space-y-1 ${isCollapsed ? "p-1.5" : "p-3"} overflow-y-auto`}>
+      <nav className={`admin-menu-scroll flex-1 space-y-1 overflow-y-auto ${isCollapsed ? "p-1.5" : "p-3"}`}>
         {visibleItems.map((item) => {
           const Icon = item.icon;
 
@@ -153,11 +152,10 @@ export default function Sidebar({ isCollapsed, onToggle }) {
               title={isCollapsed ? item.label : undefined}
             >
               <Icon size={18} weight="duotone" className="shrink-0" />
-              {!isCollapsed && <span>{item.label}</span>}
+              {!isCollapsed && <span className="truncate">{item.label}</span>}
             </NavLink>
           );
         })}
-
       </nav>
     </aside>
   );
