@@ -81,6 +81,7 @@ export default function TableOrder() {
   const [searchTerm, setSearchTerm] = useState("");
   const [cartPanelWidth, setCartPanelWidth] = useState(480);
   const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [qrCartOpen, setQrCartOpen] = useState(false);
   const [serverItemsList, setServerItemsList] = useState([]);
 
   const fetchData = useCallback(async () => {
@@ -544,6 +545,351 @@ export default function TableOrder() {
   }
 
   const statusConfig = STATUS_CONFIG[table?.status] || STATUS_CONFIG.trong;
+
+  if (isQRMode) {
+    return (
+      <div className="min-h-[100dvh] bg-[#eff1ea] pb-28 text-slate-900">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-[#fbfbf8]/95 px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="admin-kicker">Order món</p>
+              <h1 className="truncate text-lg font-black leading-tight text-slate-950">
+                {table?.name || "Bàn"}
+              </h1>
+            </div>
+            <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-black ${statusConfig.color}`}>
+              {statusConfig.label}
+            </span>
+          </div>
+          {(success || error) && (
+            <div className="mt-3">
+              {success && (
+                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">
+                  <CheckCircle size={14} weight="fill" />
+                  {success}
+                </div>
+              )}
+              {error && (
+                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
+                  <WarningCircle size={14} weight="duotone" />
+                  {error}
+                </div>
+              )}
+            </div>
+          )}
+        </header>
+
+        <main className="space-y-3 px-3 py-3">
+          <section className="rounded-[14px] border border-slate-200/80 bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.045)]">
+            <div className="relative">
+              <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Tìm món ăn..."
+                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+              />
+            </div>
+
+            <div className="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {allCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    setCurrentPage(1);
+                  }}
+                  className={`min-h-10 shrink-0 rounded-xl border px-3 text-xs font-black transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
+                    activeCategory === cat.id
+                      ? "border-emerald-700 bg-emerald-700 text-white"
+                      : "border-slate-200 bg-slate-50 text-slate-600"
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-2 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+              <span className="text-[11px] font-bold text-slate-400">
+                {filteredMenu.length} món phù hợp
+              </span>
+              <label className="flex items-center gap-2 text-[11px] font-black text-slate-500">
+                Hiển thị
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="h-8 rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs font-black text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  aria-label="Số món hiển thị mỗi trang"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          {paginatedMenu.length === 0 ? (
+            <section className="flex min-h-64 flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-white/70 px-4 text-center">
+              <MagnifyingGlass size={32} weight="duotone" className="mb-2 text-slate-300" />
+              <p className="text-sm font-black text-slate-600">Không tìm thấy món phù hợp</p>
+              <p className="mt-1 text-xs font-semibold text-slate-400">Thử đổi danh mục hoặc nhập từ khóa khác.</p>
+            </section>
+          ) : (
+            <section className="space-y-2">
+              {paginatedMenu.map((item) => {
+                const qty = getCartQty(item.id);
+                return (
+                  <article
+                    key={item.id}
+                    className={`flex gap-3 rounded-[14px] border bg-white p-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.035)] ${
+                      qty > 0 ? "border-emerald-200 ring-1 ring-emerald-100" : "border-slate-200/80"
+                    }`}
+                  >
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ForkKnife size={24} weight="duotone" className="text-slate-300" />
+                      )}
+                    </div>
+
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="min-w-0">
+                        <h2 className="line-clamp-2 text-sm font-black leading-snug text-slate-900">
+                          {item.name}
+                        </h2>
+                        <p className="mt-1 text-sm font-black text-emerald-700">
+                          {formatMoney(item.price)}
+                        </p>
+                        {item.max_order_quantity !== null && item.max_order_quantity !== undefined ? (
+                          <p className={`mt-0.5 text-[11px] font-black ${Number(item.max_order_quantity) > 0 ? "text-slate-400" : "text-red-500"}`}>
+                            Còn {Number(item.max_order_quantity) || 0}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-end pt-2">
+                        {qty === 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => addToCart(item)}
+                            disabled={!canAddMore(item.id)}
+                            className="min-h-10 rounded-xl bg-emerald-700 px-4 text-xs font-black text-white transition-colors hover:bg-emerald-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                            aria-label={`Thêm ${item.name}`}
+                          >
+                            Thêm
+                          </button>
+                        ) : (
+                          <div className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-1">
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(item.id)}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-slate-600 shadow-sm active:scale-[0.98]"
+                              aria-label={`Giảm ${item.name}`}
+                            >
+                              <Minus size={14} weight="bold" />
+                            </button>
+                            <span className="min-w-5 text-center text-sm font-black text-emerald-800">{qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => addToCart(item)}
+                              disabled={!canAddMore(item.id)}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-700 text-white shadow-sm active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                              aria-label={`Tăng ${item.name}`}
+                            >
+                              <Plus size={14} weight="bold" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+          )}
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between rounded-[14px] border border-slate-200/80 bg-white p-2 shadow-[0_8px_22px_rgba(15,23,42,0.035)]">
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={activePage === 1}
+                className="min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Trước
+              </button>
+              <span className="text-xs font-black text-slate-500">
+                Trang {activePage}/{totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={activePage === totalPages}
+                className="min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Sau
+              </button>
+            </div>
+          )}
+        </main>
+
+        {qrCartOpen && (
+          <div className="fixed inset-0 z-50 flex items-end bg-slate-950/35 px-2 pb-2 pt-16">
+            <section className="mx-auto flex max-h-[82dvh] w-full max-w-md flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.24)]">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="admin-kicker">Giỏ hàng</p>
+                  <h2 className="truncate text-base font-black text-slate-950">
+                    {totalItems} món, {formatMoney(totalAmount)}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQrCartOpen(false)}
+                  className="min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-600 active:scale-[0.98]"
+                >
+                  Đóng
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-3">
+                {cart.length === 0 ? (
+                  <div className="flex min-h-48 flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center">
+                    <ShoppingCart size={32} weight="duotone" className="mb-2 text-slate-300" />
+                    <p className="text-sm font-black text-slate-600">Giỏ hàng đang trống</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-400">Chọn món ở thực đơn để tạo order.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {cart.map((item) => (
+                      <article
+                        key={item.id}
+                        className="rounded-[14px] border border-slate-200/80 bg-slate-50/70 p-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-black leading-snug text-slate-900">
+                              {item.name}
+                            </h3>
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {renderStatusBadges(item)}
+                            </div>
+                            <p className="mt-2 text-xs font-bold text-slate-400">
+                              {formatMoney(item.price)} x {item.quantity}
+                            </p>
+                          </div>
+                          <p className="shrink-0 text-sm font-black text-emerald-700">
+                            {formatMoney(Number(item.price || 0) * Number(item.quantity || 0))}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleSendToKitchen(item.id)}
+                            className={`min-h-9 rounded-xl border px-3 text-[11px] font-black ${
+                              item.sendToKitchen !== false
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-white text-slate-500"
+                            }`}
+                          >
+                            {item.sendToKitchen !== false ? "Gửi bếp" : "Không gửi bếp"}
+                          </button>
+
+                          <div className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-1">
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(item.id)}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 text-slate-600 active:scale-[0.98]"
+                              aria-label={`Giảm ${item.name}`}
+                            >
+                              <Minus size={14} weight="bold" />
+                            </button>
+                            <span className="min-w-6 text-center text-sm font-black text-slate-900">{item.quantity}</span>
+                            <button
+                              type="button"
+                              onClick={() => addToCart(item)}
+                              disabled={!canAddMore(item.id)}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-700 text-white active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                              aria-label={`Tăng ${item.name}`}
+                            >
+                              <Plus size={14} weight="bold" />
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-slate-100 bg-white p-3">
+                <div className="mb-3 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2">
+                  <span className="text-xs font-black uppercase tracking-wide text-slate-500">Tổng tiền</span>
+                  <span className="text-base font-black text-emerald-700">{formatMoney(totalAmount)}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleConfirmOrder}
+                  disabled={cart.length === 0 || submitting}
+                  className="min-h-12 w-full rounded-xl bg-emerald-700 px-5 text-sm font-black text-white shadow-[0_14px_26px_rgba(4,120,87,0.2)] transition-colors hover:bg-emerald-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                >
+                  {submitting ? "Đang gửi..." : "Gửi order"}
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-[#fbfbf8]/95 p-3 shadow-[0_-12px_32px_rgba(15,23,42,0.08)] backdrop-blur">
+          <div className="mx-auto flex max-w-md items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">
+                {totalItems} món trong giỏ
+              </p>
+              <p className="truncate text-base font-black text-emerald-700">
+                {formatMoney(totalAmount)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setQrCartOpen(true)}
+              disabled={cart.length === 0}
+              className="flex min-h-12 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 shadow-sm active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <ShoppingCart size={16} weight="duotone" />
+              Giỏ
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmOrder}
+              disabled={cart.length === 0 || submitting}
+              className="min-h-12 rounded-xl bg-emerald-700 px-5 text-sm font-black text-white shadow-[0_14px_26px_rgba(4,120,87,0.2)] transition-colors hover:bg-emerald-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+            >
+              {submitting ? "Đang gửi..." : "Gửi order"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-page flex min-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-[0_18px_44px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-2rem)]">

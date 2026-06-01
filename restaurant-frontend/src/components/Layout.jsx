@@ -11,7 +11,7 @@ export default function Layout({ children }) {
   if (isQRMode) {
     return (
       <div className="admin-soft-grid flex min-h-screen bg-[#eff1ea]">
-        <main className="min-w-0 flex-1 overflow-auto px-5 py-4 transition-all duration-300">
+        <main className="min-w-0 flex-1 overflow-auto transition-all duration-300">
           {children}
         </main>
       </div>
