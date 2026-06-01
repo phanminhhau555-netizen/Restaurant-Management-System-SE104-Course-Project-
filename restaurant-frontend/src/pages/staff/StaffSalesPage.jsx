@@ -41,7 +41,6 @@ export default function StaffSalesPage() {
   const [checkoutCustomerPhone, setCheckoutCustomerPhone] = useState("");
   const [checkoutCustomer, setCheckoutCustomer] = useState(null);
   const [checkoutCustomerMessage, setCheckoutCustomerMessage] = useState("");
-  const [checkoutCustomerWasCreated, setCheckoutCustomerWasCreated] = useState(false);
 
   const activeBank = useMemo(() => {
     let currentBankId = BANK_CONFIG.bankId;
@@ -136,7 +135,6 @@ export default function StaffSalesPage() {
     setCheckoutCustomerPhone("");
     setCheckoutCustomer(null);
     setCheckoutCustomerMessage("");
-    setCheckoutCustomerWasCreated(false);
     fetchOrderDetail(order.id);
   };
 
@@ -145,23 +143,17 @@ export default function StaffSalesPage() {
     if (!phone) {
       setCheckoutCustomer(null);
       setCheckoutCustomerMessage("");
-      setCheckoutCustomerWasCreated(false);
       return null;
     }
 
-    const res = await API.post("/api/customers/lookup", { phone });
+    const res = await API.post("/api/customers/lookup-existing", { phone });
     const customer = res.data?.customer || null;
-    const isNew = Boolean(res.data?.isNew);
     setCheckoutCustomer(customer);
-    setCheckoutCustomerWasCreated(isNew);
     setCheckoutCustomerMessage(
-      isNew
-        ? "Đã tạo khách hàng mới."
-        : `Tìm thấy khách hàng${customer?.full_name ? `: ${customer.full_name}` : ""}.`
+      `Tìm thấy khách hàng${customer?.full_name ? `: ${customer.full_name}` : ""}.`
     );
     return {
       customer,
-      isNew,
     };
   };
 
@@ -170,7 +162,6 @@ export default function StaffSalesPage() {
     if (checkoutCustomer) {
       return {
         customer: checkoutCustomer,
-        isNew: checkoutCustomerWasCreated,
       };
     }
     return lookupCheckoutCustomer();
@@ -689,9 +680,7 @@ export default function StaffSalesPage() {
                             customer_id: checkoutCustomer?.id || null,
                           });
                           alert(
-                            checkoutCustomerResult?.isNew
-                              ? "Đã tạo khách hàng mới."
-                              : checkoutCustomer
+                            checkoutCustomer
                                 ? "Thanh toán thành công. Điểm tích lũy đã được cộng cho khách hàng!"
                                 : "Thanh toán hóa đơn thành công!"
                           );
@@ -700,7 +689,6 @@ export default function StaffSalesPage() {
                           setCheckoutCustomerPhone("");
                           setCheckoutCustomer(null);
                           setCheckoutCustomerMessage("");
-                          setCheckoutCustomerWasCreated(false);
                           fetchOrders();
                         } catch (err) {
                           alert("Lỗi thanh toán: " + (err.response?.data?.message || err.message));

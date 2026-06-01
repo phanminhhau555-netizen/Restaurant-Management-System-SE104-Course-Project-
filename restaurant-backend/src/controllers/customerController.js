@@ -213,6 +213,28 @@ exports.lookupOrCreate = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   }
 };
+
+exports.lookupExisting = async (req, res) => {
+  const { phone } = req.body;
+  if (!phone?.trim()) {
+    return res.status(400).json({ message: 'Vui lòng nhập số điện thoại.' });
+  }
+
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM customers WHERE phone = ?',
+      [phone.trim()]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy khách hàng với số điện thoại này.' });
+    }
+
+    res.json({ customer: rows[0] });
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi server', error: err.message });
+  }
+};
  
 // [MỚI] LẤY LỊCH SỬ ĐIỂM
 // GET /api/customers/:id/points-history

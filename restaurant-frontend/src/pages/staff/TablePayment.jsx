@@ -43,7 +43,6 @@ export default function TablePayment() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customer, setCustomer] = useState(null);
   const [customerMessage, setCustomerMessage] = useState("");
-  const [customerWasCreated, setCustomerWasCreated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -133,23 +132,17 @@ export default function TablePayment() {
     if (!phone) {
       setCustomer(null);
       setCustomerMessage("");
-      setCustomerWasCreated(false);
       return null;
     }
 
-    const res = await API.post("/api/customers/lookup", { phone });
+    const res = await API.post("/api/customers/lookup-existing", { phone });
     const nextCustomer = res.data?.customer || null;
-    const isNew = Boolean(res.data?.isNew);
     setCustomer(nextCustomer);
-    setCustomerWasCreated(isNew);
     setCustomerMessage(
-      isNew
-        ? "Đã tạo khách hàng mới."
-        : `Tìm thấy khách hàng${nextCustomer?.full_name ? `: ${nextCustomer.full_name}` : ""}.`
+      `Tìm thấy khách hàng${nextCustomer?.full_name ? `: ${nextCustomer.full_name}` : ""}.`
     );
     return {
       customer: nextCustomer,
-      isNew,
     };
   };
 
@@ -158,7 +151,6 @@ export default function TablePayment() {
     if (customer) {
       return {
         customer,
-        isNew: customerWasCreated,
       };
     }
     return lookupCustomer();
@@ -182,9 +174,7 @@ export default function TablePayment() {
         })),
       });
       alert(
-        checkoutCustomerResult?.isNew
-          ? "Đã tạo khách hàng mới."
-          : checkoutCustomer
+        checkoutCustomer
             ? "Thanh toán thành công. Điểm tích lũy đã được cộng cho khách hàng!"
             : "Thanh toán hóa đơn thành công!"
       );
@@ -324,7 +314,6 @@ export default function TablePayment() {
                         setCustomerPhone(event.target.value);
                         setCustomer(null);
                         setCustomerMessage("");
-                        setCustomerWasCreated(false);
                       }}
                       onBlur={() => {
                         if (customerPhone.trim()) lookupCustomer().catch(() => {});

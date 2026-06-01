@@ -3,6 +3,7 @@ const router = express.Router();
 const customerController = require('../controllers/customerController');
 const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 router.post('/lookup', verifyToken, customerController.lookupOrCreate);
+router.post('/lookup-existing', verifyToken, customerController.lookupExisting);
 router.get('/', verifyToken, customerController.getAllCustomers);
 router.get('/search', verifyToken, customerController.searchCustomer);
 router.post('/', verifyToken, customerController.createCustomer);
