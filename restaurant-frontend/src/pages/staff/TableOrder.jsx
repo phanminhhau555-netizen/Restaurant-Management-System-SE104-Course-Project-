@@ -321,6 +321,9 @@ export default function TableOrder() {
   };
 
   const updatePrice = (id, val) => {
+     if (val !== "" && parseFloat(val) < 0) {
+    return; 
+  }
     setCart((prev) =>
       prev.map((c) => {
         if (c.id === id) {
@@ -353,6 +356,9 @@ export default function TableOrder() {
     CATEGORY_TONES[Math.abs(Number(id) || 0) % CATEGORY_TONES.length];
 
   const handleConfirmOrder = async () => {
+    if (!window.confirm("Bạn có chắc chắn muốn gửi những món ăn này xuống bếp chế biến không?")) {
+  return;
+}
     if (cart.length === 0) return;
     if (table?.status !== "dang_dung") {
       alert("Bàn phải ở trạng thái có khách trước khi order.");
