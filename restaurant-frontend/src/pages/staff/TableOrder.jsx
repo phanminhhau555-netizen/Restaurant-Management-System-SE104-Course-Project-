@@ -18,6 +18,8 @@ const STATUS_CONFIG = {
   da_dat: { label: "Đã đặt", color: "bg-orange-100 text-orange-700 border-orange-200" },
 };
 
+const PAGE_SIZE_OPTIONS = [10, 20, 30];
+
 const renderStatusBadges = (item) => {
   const badges = [];
   
@@ -78,8 +80,8 @@ export default function TableOrder() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [cartPanelWidth, setCartPanelWidth] = useState(480);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [serverItemsList, setServerItemsList] = useState([]);
-  const ITEMS_PER_PAGE = 12;
 
   const fetchData = useCallback(async () => {
     try {
@@ -342,10 +344,10 @@ export default function TableOrder() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, menu, cart.length]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredMenu.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filteredMenu.length / itemsPerPage));
   const activePage = currentPage > totalPages ? totalPages : currentPage;
-  const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
-  const paginatedMenu = filteredMenu.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const startIndex = (activePage - 1) * itemsPerPage;
+  const paginatedMenu = filteredMenu.slice(startIndex, startIndex + itemsPerPage);
 
   const addToCart = (item) => {
     setCart((prev) => {
@@ -777,8 +779,9 @@ export default function TableOrder() {
         <div className="flex min-h-[520px] flex-1 flex-col justify-between overflow-hidden rounded-[14px] border border-slate-200/80 bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.045)] sm:p-5 xl:min-h-0">
           <div className="flex-1 overflow-auto">
             {/* Category Filter & Search Bar */}
-            <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex gap-2 flex-wrap">
+            <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="flex flex-wrap gap-2">
                 {allCategories.map((cat) => (
                   <button
                     key={cat.id}
@@ -795,21 +798,43 @@ export default function TableOrder() {
                     {cat.label}
                   </button>
                 ))}
-              </div>
+                </div>
               
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-64">
-                <MagnifyingGlass size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Tìm món ăn..."
-                  className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
-                />
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  {/* Search Bar */}
+                  <div className="relative w-full sm:w-64">
+                    <MagnifyingGlass size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      placeholder="Tìm món ăn..."
+                      className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </div>
+
+                  <label className="flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[11px] font-black text-slate-500">
+                    <span className="whitespace-nowrap">Hiển thị</span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="h-7 rounded-lg border border-slate-200 bg-white px-2 text-xs font-black text-slate-700 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                      aria-label="Số món hiển thị mỗi trang"
+                    >
+                      {PAGE_SIZE_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                          {size} món
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
               </div>
             </div>
 
