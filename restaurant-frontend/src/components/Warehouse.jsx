@@ -277,9 +277,6 @@ export default function Warehouse({ permissions }) {
           <div>
             <p className="admin-kicker">Nhà bếp</p>
             <h1 className="admin-title">Kho nguyên liệu</h1>
-            <p className="admin-subtitle">
-              Theo dõi tồn kho, nhập xuất nguyên liệu và nhật ký vận hành trong ca.
-            </p>
           </div>
           {permissions.canViewLogs ? (
             <button
@@ -320,7 +317,6 @@ export default function Warehouse({ permissions }) {
               <div className="flex items-center justify-between gap-3 border-b border-gray-100 bg-slate-50/60 px-4 py-2.5">
                 <div className="min-w-0">
                   <h3 className="font-black text-gray-950">Tồn kho hiện tại</h3>
-                  <p className="mt-0.5 text-xs font-semibold text-gray-400">Theo dõi số lượng đang có trong kho</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-xs font-black text-gray-500 shadow-sm">
                   {ingredients.length} nguyên liệu
@@ -712,9 +708,6 @@ export default function Warehouse({ permissions }) {
                       <ClockCounterClockwise size={24} weight="duotone" />
                     </div>
                     <p className="mt-4 font-semibold text-gray-900">Chưa có nhật ký kho</p>
-                    <p className="mt-2 max-w-sm text-sm text-gray-500">
-                      Khi có nhập hoặc xuất kho, lịch sử sẽ hiển thị đầy đủ ở đây.
-                    </p>
                   </div>
                 ) : (
                   <div className="overflow-y-auto p-4">

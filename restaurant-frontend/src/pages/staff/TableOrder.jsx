@@ -532,11 +532,10 @@ export default function TableOrder() {
   if (loading) {
     return (
       <div className="admin-soft-grid flex min-h-screen items-center justify-center bg-[#eff1ea] p-4">
-        <div className="admin-panel-pad w-full max-w-sm space-y-3 text-center">
-          <div className="mx-auto h-10 w-10 animate-pulse rounded-full bg-emerald-100" />
-          <p className="text-sm font-black text-slate-700">Đang tải bàn và thực đơn</p>
-          <p className="text-xs font-semibold text-slate-400">Dữ liệu order sẽ sẵn sàng trong giây lát.</p>
-        </div>
+          <div className="admin-panel-pad w-full max-w-sm space-y-3 text-center">
+            <div className="mx-auto h-10 w-10 animate-pulse rounded-full bg-emerald-100" />
+            <p className="text-sm font-black text-slate-700">Đang tải bàn và thực đơn</p>
+          </div>
       </div>
     );
   }
@@ -610,7 +609,6 @@ export default function TableOrder() {
               <span className="text-[11px] font-bold text-slate-400">
                 {filteredMenu.length} món phù hợp
               </span>
-              <span className="text-[11px] font-black text-slate-500">Cuộn để xem thêm</span>
             </div>
           </section>
 
@@ -618,7 +616,6 @@ export default function TableOrder() {
             <section className="flex min-h-64 flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-white/70 px-4 text-center">
               <MagnifyingGlass size={32} weight="duotone" className="mb-2 text-slate-300" />
               <p className="text-sm font-black text-slate-600">Không tìm thấy món phù hợp</p>
-              <p className="mt-1 text-xs font-semibold text-slate-400">Thử đổi danh mục hoặc nhập từ khóa khác.</p>
             </section>
           ) : (
             <section className="admin-menu-scroll max-h-[calc(100dvh-18rem)] space-y-2 overflow-y-auto pr-1">
@@ -725,7 +722,6 @@ export default function TableOrder() {
                   <div className="flex min-h-48 flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center">
                     <ShoppingCart size={32} weight="duotone" className="mb-2 text-slate-300" />
                     <p className="text-sm font-black text-slate-600">Giỏ hàng đang trống</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-400">Chọn món ở thực đơn để tạo order.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -925,9 +921,6 @@ export default function TableOrder() {
                 {totalItems} món
               </span>
             </div>
-            <p className="mt-1 text-[11px] font-semibold text-slate-400">
-              Tick chọn món cần gửi bếp khi xác nhận order.
-            </p>
           </div>
 
           {/* Cart Items */}
@@ -936,7 +929,6 @@ export default function TableOrder() {
               <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-12 text-center text-slate-400">
                 <ForkKnife size={32} className="mb-2 text-slate-300" weight="duotone" />
                 <p className="text-sm font-black text-slate-500">Chưa có món trong giỏ</p>
-                <p className="mt-1 text-xs font-semibold text-slate-400">Chọn món ở thực đơn bên phải để bắt đầu order.</p>
               </div>
             ) : (
               <table className="w-full border-collapse text-[11px]">
@@ -1116,7 +1108,6 @@ export default function TableOrder() {
               <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center">
                 <MagnifyingGlass size={32} weight="duotone" className="mb-2 text-slate-300" />
                 <p className="text-sm font-black text-slate-600">Không tìm thấy món phù hợp</p>
-                <p className="mt-1 text-xs font-semibold text-slate-400">Thử đổi danh mục hoặc nhập từ khóa khác.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">

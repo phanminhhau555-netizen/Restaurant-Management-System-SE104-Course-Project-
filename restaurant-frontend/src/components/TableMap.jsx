@@ -29,7 +29,6 @@ export { STATUS_CONFIG };
 
 export default function TableMap({
   title = "Sơ đồ bàn",
-  subtitle,
   tables = [],
   areas = [],
   loading = false,
@@ -85,7 +84,6 @@ export default function TableMap({
           <div>
             <p className="admin-kicker">{kicker || (editable ? "Quản trị" : "Phục vụ")}</p>
             <h1 className="admin-title">{title}</h1>
-            {subtitle ? <p className="admin-subtitle">{subtitle}</p> : null}
           </div>
 
           {editable ? (
@@ -231,14 +229,6 @@ export default function TableMap({
                       </button>
                     ) : null}
 
-                    {!editable && table.status === "trong" && !onReceiveGuests && !onToggleOccupancy ? (
-                      <p className="mt-2 text-xs font-bold text-emerald-700">Chuyển trạng thái ở Quản lí bàn</p>
-                    ) : null}
-
-                    {!editable && table.status === "dang_dung" && onSelectTable ? (
-                      <p className="mt-2 text-xs font-bold text-blue-700">Bấm để order món</p>
-                    ) : null}
-
                     {editable ? (
                       <div className="mt-3 space-y-2">
                         <select
@@ -326,10 +316,6 @@ export default function TableMap({
                 className="h-full w-full object-contain"
               />
             </div>
-
-            <p className="text-[11px] font-semibold text-slate-500 mb-6 leading-relaxed">
-              Dán mã này tại bàn để phục vụ viên quét nhanh và truy cập trực tiếp vào giao diện nhập món của {selectedQRTable.name}.
-            </p>
 
             <div className="flex gap-3">
               <a

@@ -3,7 +3,7 @@ import { ChartBar, CurrencyCircleDollar, ForkKnife, UsersThree } from "@phosphor
 import Layout from "../../components/Layout";
 import API from "../../services/api";
 
-const StatCard = ({ label, value, helper, icon: Icon, tone = "emerald" }) => {
+const StatCard = ({ label, value, icon: Icon, tone = "emerald" }) => {
   const toneClass = {
     emerald: "bg-emerald-50 text-emerald-700",
     blue: "bg-blue-50 text-blue-700",
@@ -17,7 +17,6 @@ const StatCard = ({ label, value, helper, icon: Icon, tone = "emerald" }) => {
         <div>
           <p className="text-sm font-bold text-slate-500">{label}</p>
           <p className="mt-1 text-2xl font-black tracking-tight text-slate-950">{value}</p>
-          <p className="mt-3 text-xs font-semibold text-slate-400">{helper}</p>
         </div>
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${toneClass}`}>
           <Icon size={23} weight="duotone" />
@@ -44,9 +43,6 @@ function EmptyOrders() {
         <ForkKnife size={24} weight="duotone" />
       </div>
       <p className="mt-4 font-black text-slate-900">Ca này đang yên ắng</p>
-      <p className="mt-2 max-w-sm text-sm font-semibold text-slate-500">
-        Khi có đơn mới hoặc bàn đang phục vụ, trạng thái sẽ xuất hiện ở đây.
-      </p>
     </div>
   );
 }
@@ -112,9 +108,6 @@ export default function Dashboard() {
           <div>
             <p className="admin-kicker">Tổng quan</p>
             <h1 className="admin-title">Báo cáo hiệu suất</h1>
-            <p className="admin-subtitle">
-              Tình hình hoạt động hôm nay, doanh thu, bàn đang dùng và đơn đang mở.
-            </p>
           </div>
           <div className="flex gap-2">
             {["Ngày", "Tuần", "Tháng"].map((item) => (
@@ -137,10 +130,10 @@ export default function Dashboard() {
 
       {/* Stat Cards */}
       <div className="grid gap-4 xl:grid-cols-4">
-        <StatCard icon={CurrencyCircleDollar} label="Doanh thu ngày" value={formatMoney(stats.doanh_thu)} helper="Tổng doanh thu hôm nay" />
-        <StatCard icon={ChartBar} label="Tổng đơn hàng" value={stats.tong_don} helper="Đơn đã ghi nhận" tone="blue" />
-        <StatCard icon={ForkKnife} label="Bàn đang dùng" value={orders.length} helper="Đơn đang hoạt động" tone="amber" />
-        <StatCard icon={UsersThree} label="Tổng khách hàng" value={stats.tong_khach || 0} helper="Theo dữ liệu báo cáo" tone="slate" />
+        <StatCard icon={CurrencyCircleDollar} label="Doanh thu ngày" value={formatMoney(stats.doanh_thu)} />
+        <StatCard icon={ChartBar} label="Tổng đơn hàng" value={stats.tong_don} tone="blue" />
+        <StatCard icon={ForkKnife} label="Bàn đang dùng" value={orders.length} tone="amber" />
+        <StatCard icon={UsersThree} label="Tổng khách hàng" value={stats.tong_khach || 0} tone="slate" />
       </div>
       {/* Orders Table */}
       <div className="admin-panel-pad">

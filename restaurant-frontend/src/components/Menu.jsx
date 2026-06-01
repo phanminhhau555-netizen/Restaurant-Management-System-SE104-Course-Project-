@@ -451,9 +451,6 @@ export default function Menu({ permissions = {} }) {
           <div>
             <p className="admin-kicker">Thực đơn</p>
             <h1 className="admin-title">Món ăn & công thức</h1>
-            <p className="admin-subtitle">
-              Cấu hình món ăn, giá bán, trạng thái hiển thị và định lượng nguyên liệu.
-            </p>
           </div>
           {canCreateMenuItem ? (
             <button type="button" onClick={() => setShowForm(true)} className="admin-primary-btn">
@@ -577,9 +574,6 @@ export default function Menu({ permissions = {} }) {
                             <p className="font-medium text-gray-800 text-sm">{item.name}</p>
                             <p className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
                               <span>SKU: DF-{String(item.id).padStart(4, "0")}</span>
-                              <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-600">
-                                Nhấp xem công thức
-                              </span>
                             </p>
                           </div>
                         </div>
@@ -649,9 +643,7 @@ export default function Menu({ permissions = {} }) {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100">
-                <p className="text-xs text-gray-400">
-                  Hiển thị {(page - 1) * itemsPerPage + 1} - {Math.min(page * itemsPerPage, filtered.length)} trong tổng số {filtered.length} món
-                </p>
+                <p className="text-xs text-gray-400">{filtered.length} món</p>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}

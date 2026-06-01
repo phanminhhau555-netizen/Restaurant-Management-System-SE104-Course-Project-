@@ -102,9 +102,6 @@ export default function Staff() {
           <div>
             <p className="admin-kicker">Nhân sự</p>
             <h1 className="admin-title">Tài khoản & phân quyền</h1>
-            <p className="admin-subtitle">
-              Tạo tài khoản, kiểm soát vai trò và xem nhanh phạm vi quyền của từng nhóm nhân viên.
-            </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
             <p className="text-xs font-black uppercase tracking-wide text-slate-400">Tổng nhân sự</p>
@@ -130,7 +127,6 @@ export default function Staff() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-slate-900">{role.label}</p>
-                  <p className="mt-0.5 text-xs font-semibold text-slate-400">{role.desc}</p>
                 </div>
                 <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-black ${roleTone[role.id]}`}>
                   {role.count}
@@ -145,7 +141,6 @@ export default function Staff() {
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-2.5">
               <div>
                 <h2 className="admin-section-title">Danh sách nhân viên</h2>
-                <p className="admin-muted mt-0.5">{staffAccounts.length} tài khoản trong hệ thống</p>
               </div>
               <UsersThree size={22} className="text-emerald-700" weight="duotone" />
             </div>
@@ -159,9 +154,6 @@ export default function Staff() {
             ) : staffAccounts.length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <p className="font-black text-slate-800">Chưa có nhân viên</p>
-                <p className="mt-2 text-sm font-semibold text-slate-400">
-                  Tạo tài khoản đầu tiên ở form bên phải.
-                </p>
               </div>
             ) : (
               <div className="max-h-[calc(100vh-285px)] overflow-auto">
@@ -224,7 +216,6 @@ export default function Staff() {
               </span>
               <div>
                 <h2 className="admin-section-title">Thêm nhân viên</h2>
-                <p className="admin-muted mt-0.5">Tạo tài khoản đăng nhập mới.</p>
               </div>
             </div>
 

@@ -127,9 +127,6 @@ export default function KitchenOrdersPage() {
         <div>
           <p className="admin-kicker">Bếp</p>
           <h1 className="admin-title">Hàng đợi món</h1>
-          <p className="admin-subtitle">
-            Món cũ nhất nằm trước. Bếp nhận từng món, hoàn tất từng món để hàng đợi luôn rõ ràng.
-          </p>
         </div>
         <div className="flex flex-wrap justify-end gap-2">
           <div className="admin-command-strip">
@@ -169,9 +166,6 @@ export default function KitchenOrdersPage() {
             <CheckCircle size={30} weight="duotone" />
           </div>
           <h2 className="mt-4 text-lg font-black text-slate-950">Bếp đang trống hàng đợi</h2>
-          <p className="mt-1 max-w-md text-sm font-semibold leading-6 text-slate-500">
-            Khi phục vụ gửi món xuống bếp, từng món sẽ xuất hiện tại đây theo thứ tự vào trước làm trước.
-          </p>
         </section>
       ) : (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

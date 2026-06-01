@@ -161,7 +161,6 @@ export default function StaffReservationsPage() {
         <div>
           <p className="admin-kicker">Phục vụ</p>
           <h1 className="admin-title">Quản lí bàn</h1>
-          <p className="admin-subtitle">Theo dõi sơ đồ bàn, chuyển trạng thái bàn và tạo đặt bàn trước.</p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <span className="admin-command-strip">
@@ -194,7 +193,6 @@ export default function StaffReservationsPage() {
 
       <TableMap
         title="Quản lí bàn"
-        subtitle="Dùng nút chuyển trạng thái để đổi nhanh giữa bàn trống và đang có khách."
         tables={tables}
         areas={areas}
         loading={loading}
@@ -212,7 +210,6 @@ export default function StaffReservationsPage() {
           <form onSubmit={handleSubmit} className="admin-panel-pad space-y-4">
             <div>
               <p className="admin-section-title">Đặt bàn trước</p>
-              <p className="admin-muted mt-1">Giữ bàn cho khách hẹn giờ, bàn sẽ chuyển sang trạng thái đã đặt.</p>
             </div>
 
             <label className="admin-label">
@@ -292,7 +289,6 @@ export default function StaffReservationsPage() {
 
           <section className="admin-panel-pad">
             <p className="admin-section-title">Khách đặt trước đã tới</p>
-            <p className="admin-muted mt-1">Chuyển bàn đã đặt sang có khách để bắt đầu order.</p>
 
             {reservedTables.length === 0 ? (
               <p className="mt-4 rounded-lg bg-slate-50 px-3 py-4 text-center text-xs font-bold text-slate-400">
@@ -325,7 +321,6 @@ export default function StaffReservationsPage() {
           <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
             <div>
               <p className="admin-section-title">Lịch đặt bàn</p>
-              <p className="admin-muted mt-0.5">Các lượt đặt gần nhất, ưu tiên xử lý khách sắp tới.</p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
               {reservations.length} lượt

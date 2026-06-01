@@ -138,9 +138,6 @@ export default function AdminCustomersPage() {
           <div>
             <p className="admin-kicker">Quản trị</p>
             <h1 className="admin-title">Khách hàng thành viên</h1>
-            <p className="admin-subtitle">
-              Xem danh sách, hạng thành viên và lịch sử tích điểm của khách hàng.
-            </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
@@ -191,7 +188,6 @@ export default function AdminCustomersPage() {
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-2.5">
               <div>
                 <h2 className="admin-section-title">Danh sách khách hàng</h2>
-                <p className="admin-muted mt-0.5">{filtered.length} khách hàng</p>
               </div>
               <div className="relative">
                 <MagnifyingGlass

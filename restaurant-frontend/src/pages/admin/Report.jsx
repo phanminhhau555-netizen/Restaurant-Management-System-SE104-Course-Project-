@@ -24,7 +24,7 @@ const paymentLabels = {
   qr: "QR Pay",
 };
 
-function MetricCard({ label, value, helper, icon: Icon, tone = "emerald" }) {
+function MetricCard({ label, value, icon: Icon, tone = "emerald" }) {
   const toneClass = {
     emerald: "bg-emerald-50 text-emerald-700",
     blue: "bg-blue-50 text-blue-700",
@@ -39,7 +39,6 @@ function MetricCard({ label, value, helper, icon: Icon, tone = "emerald" }) {
           <p className="mt-1 text-2xl font-black tracking-tight text-slate-950">
             {value}
           </p>
-          <p className="mt-3 text-xs font-semibold text-slate-400">{helper}</p>
         </div>
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${toneClass}`}>
           <Icon size={23} weight="duotone" />
@@ -116,9 +115,6 @@ export default function ReportsPage() {
           <div>
             <p className="admin-kicker">Báo cáo</p>
             <h1 className="admin-title">Hiệu suất kinh doanh</h1>
-            <p className="admin-subtitle">
-              Theo dõi doanh thu, món bán chạy, thanh toán và cảnh báo kho trong một màn hình.
-            </p>
           </div>
 
           <div className="flex gap-2">
@@ -150,20 +146,17 @@ export default function ReportsPage() {
                 icon={CurrencyCircleDollar}
                 label="Tổng doanh thu"
                 value={formatMoney(revenue?.tong_doanh_thu)}
-                helper="Doanh thu theo bộ lọc hiện tại"
               />
               <MetricCard
                 icon={TrendUp}
                 label="Giá trị đơn trung bình"
                 value={formatMoney((revenue?.tong_doanh_thu || 0) / (revenue?.tong_don || 1))}
-                helper="Tính trên đơn đã ghi nhận"
                 tone="blue"
               />
               <MetricCard
                 icon={ForkKnife}
                 label="Tổng đơn hàng"
                 value={revenue?.tong_don || 0}
-                helper="Số đơn trong kỳ"
                 tone="amber"
               />
             </section>
@@ -173,7 +166,6 @@ export default function ReportsPage() {
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <h2 className="admin-section-title">Xu hướng doanh thu</h2>
-                    <p className="admin-muted mt-1">So sánh theo từng ngày trong kỳ.</p>
                   </div>
                   <ChartLineUp size={24} className="text-emerald-700" weight="duotone" />
                 </div>
@@ -229,7 +221,6 @@ export default function ReportsPage() {
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <h2 className="admin-section-title">Món bán chạy</h2>
-                    <p className="admin-muted mt-1">Top 5 món theo số lượng bán.</p>
                   </div>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">
                     Top 5

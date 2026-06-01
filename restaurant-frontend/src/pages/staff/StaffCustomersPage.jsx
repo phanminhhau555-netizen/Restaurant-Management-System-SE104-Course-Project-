@@ -193,7 +193,6 @@ export default function StaffCustomersPage() {
         <div>
           <p className="admin-kicker">Phục vụ</p>
           <h1 className="admin-title">Đăng ký thành viên</h1>
-          <p className="admin-subtitle">Tra cứu hoặc tạo mới tài khoản thành viên theo số điện thoại.</p>
         </div>
         {customer && (
           <button onClick={handleReset} className="admin-secondary-btn shrink-0">
@@ -211,9 +210,6 @@ export default function StaffCustomersPage() {
           <div className="admin-panel-pad space-y-3">
             <div>
               <p className="admin-section-title">Tra cứu theo SĐT</p>
-              <p className="admin-muted mt-1">
-                Nhập số điện thoại — tự động tạo mới nếu chưa tồn tại.
-              </p>
             </div>
             <form onSubmit={handleLookup} className="flex gap-2">
               <div className="relative flex-1">
@@ -384,21 +380,15 @@ export default function StaffCustomersPage() {
           {!customer ? (
             <div className="flex flex-1 flex-col items-center justify-center rounded-[14px] border-2 border-dashed border-slate-200 bg-white/60 py-24 text-center">
               <UserCircle size={48} weight="duotone" className="mb-3 text-slate-300" />
-              <p className="text-sm font-black text-slate-400">
-                Tra cứu SĐT để xem thông tin khách hàng
-              </p>
-              <p className="mt-1 text-xs font-semibold text-slate-300">
-                Tự động tạo mới nếu chưa đăng ký
-              </p>
-            </div>
+            <p className="text-sm font-black text-slate-400">
+              Tra cứu SĐT để xem thông tin khách hàng
+            </p>
+          </div>
           ) : (
             <section className="admin-panel flex-1 overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
                 <div>
                   <p className="admin-section-title">Lịch sử tích điểm</p>
-                  <p className="admin-muted mt-0.5">
-                    Các giao dịch điểm gần nhất của khách.
-                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">

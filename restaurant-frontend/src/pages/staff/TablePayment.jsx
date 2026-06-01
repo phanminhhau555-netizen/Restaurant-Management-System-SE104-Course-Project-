@@ -75,7 +75,6 @@ export default function TablePayment() {
     (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
-  const totalItems = visibleItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -238,16 +237,12 @@ export default function TablePayment() {
           <section className="admin-panel flex flex-1 flex-col items-center justify-center text-center">
             <ForkKnife size={42} weight="duotone" className="mb-3 text-slate-300" />
             <p className="text-sm font-black text-slate-700">Bàn này chưa có đơn đang mở</p>
-            <p className="mt-1 text-xs font-semibold text-slate-400">Quay lại sơ đồ bàn để order món trước khi thanh toán.</p>
           </section>
         ) : (
           <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
             <section className="admin-panel flex min-h-0 flex-col overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
-                <div>
-                  <p className="admin-section-title">Món đã gọi</p>
-                  <p className="admin-muted mt-0.5">{totalItems} món trong hóa đơn</p>
-                </div>
+                <p className="admin-section-title">Món đã gọi</p>
                 <p className="text-lg font-black text-emerald-700">{formatMoney(totalAmount)}</p>
               </div>
 
@@ -335,9 +330,6 @@ export default function TablePayment() {
                       {customer?.points != null ? ` Hiện có ${customer.points} điểm.` : ""}
                     </p>
                   )}
-                  <p className="mt-1 text-[10px] font-semibold text-slate-400">
-                    Bỏ trống nếu khách không cần tích điểm.
-                  </p>
                 </div>
 
                 <div>

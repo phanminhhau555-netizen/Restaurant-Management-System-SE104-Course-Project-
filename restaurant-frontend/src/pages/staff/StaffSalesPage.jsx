@@ -619,9 +619,6 @@ export default function StaffSalesPage() {
                         {checkoutCustomer?.points != null ? ` Hiện có ${checkoutCustomer.points} điểm.` : ""}
                       </p>
                     )}
-                    <p className="mt-1 text-[10px] font-semibold text-slate-400">
-                      Bỏ trống nếu khách không cần tích điểm.
-                    </p>
                   </div>
                   <div className={`grid gap-2 ${
                     activePaymentMethods.length === 1 ? "grid-cols-1" :

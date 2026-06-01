@@ -581,10 +581,6 @@ export default function TablesPage() {
               />
             </div>
 
-            <p className="text-[11px] font-semibold text-slate-500 mb-6 leading-relaxed">
-              Dán mã này tại bàn để phục vụ viên quét nhanh và truy cập trực tiếp vào giao diện nhập món của {selectedQRTable.name}.
-            </p>
-
             <div className="flex gap-3">
               <a
                 href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(

@@ -11,9 +11,9 @@ import Layout from "../../components/Layout";
 import API from "../../services/api";
 
 const PAYMENT_METHOD_META = [
-  { id: "tien_mat",     name: "Tiền mặt",     description: "Thanh toán trực tiếp",   icon: Money,      toggleable: false },
-  { id: "chuyen_khoan", name: "Thẻ tín dụng", description: "Visa, Mastercard, JCB",  icon: CreditCard, toggleable: false },
-  { id: "qr",           name: "QR Pay",        description: "Kích hoạt chuyển khoản", icon: QrCode,     toggleable: true  },
+  { id: "tien_mat",     name: "Tiền mặt",     icon: Money,      toggleable: false },
+  { id: "chuyen_khoan", name: "Thẻ tín dụng", icon: CreditCard, toggleable: false },
+  { id: "qr",           name: "QR Pay",        icon: QrCode,     toggleable: true  },
 ];
 
 export default function SettingsPage() {
@@ -42,7 +42,9 @@ export default function SettingsPage() {
             if (tpl.bank_id) setBankId(tpl.bank_id);
             if (tpl.account_no) setAccountNo(tpl.account_no);
             if (tpl.account_name) setAccountName(tpl.account_name);
-          } catch {}
+          } catch {
+            // Keep the default invoice settings if saved JSON is malformed.
+          }
         }
       })
       .catch(() => {});
@@ -94,11 +96,7 @@ export default function SettingsPage() {
           <div>
             <p className="admin-kicker">Cài đặt</p>
             <h1 className="admin-title">Cấu hình hệ thống</h1>
-            <p className="admin-subtitle">
-              Quản lý thuế, phương thức thanh toán và mẫu hóa đơn của nhà hàng.
-            </p>
           </div>
-          <div className="admin-command-strip">Mẫu hóa đơn cập nhật trực tiếp</div>
         </header>
 
         {saveState === "error" && (
@@ -117,7 +115,6 @@ export default function SettingsPage() {
                 </span>
                 <div>
                   <h2 className="text-base font-bold text-gray-900">Cấu hình Thuế</h2>
-                  <p className="text-xs font-medium text-gray-400">Áp dụng cho hóa đơn</p>
                 </div>
               </div>
               <label className="block text-xs font-semibold text-gray-500">
@@ -142,7 +139,6 @@ export default function SettingsPage() {
                 </span>
                 <div>
                   <h2 className="text-base font-bold text-gray-900">Tài khoản QR</h2>
-                  <p className="text-xs font-medium text-gray-400">Thông tin VietQR</p>
                 </div>
               </div>
               
@@ -191,7 +187,6 @@ export default function SettingsPage() {
               </span>
               <div>
                 <h2 className="text-base font-bold text-gray-900">Phương thức thanh toán</h2>
-                <p className="text-xs font-medium text-gray-400">{enabledMethods.length} phương thức đang bật</p>
               </div>
             </div>
 
@@ -219,7 +214,6 @@ export default function SettingsPage() {
                       </button>
                     </div>
                     <h3 className="text-sm font-bold text-gray-800">{method.name}</h3>
-                    <p className="mt-1 text-xs font-medium text-gray-400">{method.description}</p>
                     <p className={`mt-4 text-xs font-bold ${method.active ? "text-emerald-600" : "text-gray-400"}`}>
                       {method.active ? "Đang bật" : "Đã tắt"}
                     </p>
@@ -281,7 +275,6 @@ export default function SettingsPage() {
               </span>
               <div>
                 <h2 className="text-base font-bold text-gray-900">Cài đặt mẫu hóa đơn</h2>
-                <p className="text-xs font-medium text-gray-400">Nội dung này sẽ hiện trên hóa đơn in ra.</p>
               </div>
             </div>
 
@@ -319,7 +312,7 @@ export default function SettingsPage() {
                 <p className="text-xs font-medium text-gray-400">
                   {saveState === "saved" ? "✓ Đã lưu cấu hình." :
                    saveState === "error" ? "Lưu thất bại." :
-                   "Thay đổi được phản ánh ngay trên mẫu xem trước."}
+                   ""}
                 </p>
                 <button
                   type="button"
