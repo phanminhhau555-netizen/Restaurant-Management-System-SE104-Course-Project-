@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -59,7 +59,9 @@ export default function TablePayment() {
         if (tpl.bank_id) currentBankId = tpl.bank_id;
         if (tpl.account_no) currentAccountNo = tpl.account_no;
         if (tpl.account_name) currentAccountName = tpl.account_name;
-      } catch (e) {}
+      } catch {
+        // Keep the fallback bank config if the saved invoice template is malformed.
+      }
     }
 
     return {
@@ -76,11 +78,7 @@ export default function TablePayment() {
   );
   const totalItems = visibleItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
-  useEffect(() => {
-    fetchData();
-  }, [tableId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -121,7 +119,12 @@ export default function TablePayment() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tableId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchData();
+  }, [fetchData]);
 
   const formatMoney = (amount) => new Intl.NumberFormat("vi-VN").format(amount || 0) + "đ";
 
@@ -207,7 +210,7 @@ export default function TablePayment() {
   }
 
   return (
-    <div className="admin-page flex h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+    <div className="admin-page flex min-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-slate-50 shadow-[0_18px_44px_rgba(15,23,42,0.08)] xl:h-[calc(100vh-2rem)]">
       <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-[#fbfbf8]/95 px-5 py-3 shadow-[0_4px_16px_rgba(15,23,42,0.04)] backdrop-blur">
         <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -233,7 +236,7 @@ export default function TablePayment() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1180px] flex-1 flex-col gap-4 overflow-hidden p-4">
+      <main className="mx-auto flex w-full max-w-[1180px] flex-1 flex-col gap-4 overflow-auto p-4 xl:overflow-hidden">
         {error && (
           <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">
             <WarningCircle size={14} weight="duotone" />
@@ -248,7 +251,7 @@ export default function TablePayment() {
             <p className="mt-1 text-xs font-semibold text-slate-400">Quay lại sơ đồ bàn để order món trước khi thanh toán.</p>
           </section>
         ) : (
-          <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
             <section className="admin-panel flex min-h-0 flex-col overflow-hidden">
               <div className="flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
                 <div>
@@ -264,7 +267,7 @@ export default function TablePayment() {
                   <p className="text-xs font-semibold">Chưa có món để thanh toán</p>
                 </div>
               ) : (
-                <div className="flex-1 overflow-auto">
+                <div className="admin-menu-scroll flex-1 overflow-auto">
                   <table className="w-full border-collapse text-left text-xs font-semibold">
                     <thead>
                       <tr className="sticky top-0 z-10 border-b border-slate-100 bg-slate-50 text-slate-400">
@@ -294,120 +297,134 @@ export default function TablePayment() {
               )}
             </section>
 
-            <aside className="admin-panel-pad flex min-h-0 flex-col bg-white">
-              <div className="rounded-xl bg-slate-50 px-3 py-3">
-                <div className="flex items-center gap-2">
-                  <Receipt size={18} weight="duotone" className="text-slate-400" />
-                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tổng thanh toán</p>
-                </div>
-                <p className="mt-1 text-2xl font-black text-emerald-700">{formatMoney(totalAmount)}</p>
-              </div>
-
-              <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-3">
-                <div className="flex items-center gap-2">
-                  <User size={18} weight="duotone" className="text-slate-400" />
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                    Khách hàng tích điểm
-                  </span>
-                </div>
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="tel"
-                    value={customerPhone}
-                    onChange={(event) => {
-                      setCustomerPhone(event.target.value);
-                      setCustomer(null);
-                      setCustomerMessage("");
-                      setCustomerWasCreated(false);
-                    }}
-                    onBlur={() => {
-                      if (customerPhone.trim()) lookupCustomer().catch(() => {});
-                    }}
-                    placeholder="Nhập số điện thoại"
-                    className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => lookupCustomer().catch((err) => setError(err.response?.data?.message || "Không tìm được khách hàng."))}
-                    className="admin-secondary-btn h-10 px-3 text-xs"
-                  >
-                    Kiểm tra
-                  </button>
-                </div>
-                {(customerMessage || customer) && (
-                  <p className="mt-2 text-[11px] font-bold text-emerald-700">
-                    {customerMessage}
-                    {customer?.points != null ? ` Hiện có ${customer.points} điểm.` : ""}
-                  </p>
-                )}
-                <p className="mt-1 text-[10px] font-semibold text-slate-400">
-                  Bỏ trống nếu khách không cần tích điểm.
-                </p>
-              </div>
-
-              <div className="mt-4">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                  Phương thức thanh toán
-                </span>
-                <div className="mt-2 grid gap-2">
-                  {Object.entries(PAYMENT_METHODS)
-                    .filter(([key]) => activePaymentMethods.includes(key))
-                    .map(([key, label]) => {
-                      const Icon = methodIcons[key];
-                      const active = paymentMethod === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setPaymentMethod(key)}
-                          className={`flex min-h-12 items-center justify-between gap-3 rounded-xl border px-3 transition-colors ${
-                            active
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                              : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
-                          }`}
-                        >
-                          <span className="flex items-center gap-2 text-xs font-black">
-                            <Icon size={18} weight="duotone" />
-                            {label}
-                          </span>
-                          <span className={`h-3 w-3 rounded-full border ${active ? "border-emerald-600 bg-emerald-600" : "border-slate-300 bg-white"}`} />
-                        </button>
-                      );
-                    })}
+            <aside className="admin-panel flex min-h-0 flex-col overflow-hidden bg-white">
+              <div className="border-b border-slate-100 bg-white p-3">
+                <div className="rounded-xl bg-slate-50 px-3 py-3">
+                  <div className="flex items-center gap-2">
+                    <Receipt size={18} weight="duotone" className="text-slate-400" />
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tổng thanh toán</p>
+                  </div>
+                  <p className="mt-1 text-2xl font-black text-emerald-700">{formatMoney(totalAmount)}</p>
                 </div>
               </div>
 
-              {paymentMethod === "qr" && (
-                <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                  <div className="mx-auto flex h-[220px] w-[220px] items-center justify-center overflow-hidden rounded-xl border border-white bg-white p-1 shadow-sm">
-                    <img
-                      src={`https://img.vietqr.io/image/${activeBank.bankId}-${activeBank.accountNo}-compact2.png?amount=${totalAmount}&addInfo=NHWOW%20${order.id}&accountName=${encodeURIComponent(activeBank.accountName)}`}
-                      alt="VietQR Code"
-                      className="h-full w-full object-contain"
+              <div className="admin-menu-scroll min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                  <div className="flex items-center gap-2">
+                    <User size={18} weight="duotone" className="text-slate-400" />
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      Khách hàng tích điểm
+                    </span>
+                  </div>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(event) => {
+                        setCustomerPhone(event.target.value);
+                        setCustomer(null);
+                        setCustomerMessage("");
+                        setCustomerWasCreated(false);
+                      }}
+                      onBlur={() => {
+                        if (customerPhone.trim()) lookupCustomer().catch(() => {});
+                      }}
+                      placeholder="Nhập số điện thoại"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                     />
+                    <button
+                      type="button"
+                      onClick={() => lookupCustomer().catch((err) => setError(err.response?.data?.message || "Không tìm được khách hàng."))}
+                      className="admin-secondary-btn h-10 px-3 text-xs"
+                    >
+                      Kiểm tra
+                    </button>
                   </div>
-                  <div className="mt-3 space-y-1 text-center text-xs font-semibold text-slate-600">
-                    <p><span className="font-bold text-slate-800">STK {activeBank.bankId}:</span> {activeBank.accountNo}</p>
-                    <p><span className="font-bold text-slate-800">Chủ tài khoản:</span> {activeBank.accountName}</p>
-                    <p><span className="font-bold text-slate-800">Số tiền:</span> <span className="font-black text-emerald-700">{formatMoney(totalAmount)}</span></p>
-                    <p>
-                      <span className="font-bold text-slate-800">Nội dung:</span>{" "}
-                      <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono font-bold text-slate-800">
-                        NHWOW {order.id}
-                      </span>
+                  {(customerMessage || customer) && (
+                    <p className="mt-2 text-[11px] font-bold text-emerald-700">
+                      {customerMessage}
+                      {customer?.points != null ? ` Hiện có ${customer.points} điểm.` : ""}
                     </p>
+                  )}
+                  <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                    Bỏ trống nếu khách không cần tích điểm.
+                  </p>
+                </div>
+
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                    Phương thức thanh toán
+                  </span>
+                  <div className="mt-2 grid gap-2">
+                    {Object.entries(PAYMENT_METHODS)
+                      .filter(([key]) => activePaymentMethods.includes(key))
+                      .map(([key, label]) => {
+                        const Icon = methodIcons[key];
+                        const active = paymentMethod === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setPaymentMethod(key)}
+                            className={`flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 transition-colors ${
+                              active
+                                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                                : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+                            }`}
+                          >
+                            <span className="flex items-center gap-2 text-xs font-black">
+                              <Icon size={18} weight="duotone" />
+                              {label}
+                            </span>
+                            <span className={`h-3 w-3 rounded-full border ${active ? "border-emerald-600 bg-emerald-600" : "border-slate-300 bg-white"}`} />
+                          </button>
+                        );
+                      })}
                   </div>
                 </div>
-              )}
 
-              <button
-                type="button"
-                onClick={handleCheckout}
-                disabled={visibleItems.length === 0 || submitting}
-                className="admin-primary-btn mt-auto h-11 w-full text-xs font-black disabled:opacity-60"
-              >
-                {submitting ? "Đang xử lý..." : "Thanh toán"}
-              </button>
+                {paymentMethod === "qr" && (
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                    <div className="mx-auto flex aspect-square w-[min(100%,clamp(150px,27vh,220px))] items-center justify-center overflow-hidden rounded-xl border border-white bg-white p-1 shadow-sm">
+                      <img
+                        src={`https://img.vietqr.io/image/${activeBank.bankId}-${activeBank.accountNo}-compact2.png?amount=${totalAmount}&addInfo=NHWOW%20${order.id}&accountName=${encodeURIComponent(activeBank.accountName)}`}
+                        alt="VietQR Code"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                    <div className="mt-3 grid gap-1.5 text-xs font-semibold text-slate-600">
+                      <p className="flex items-center justify-between gap-3">
+                        <span className="font-bold text-slate-800">STK {activeBank.bankId}</span>
+                        <span className="font-mono font-black text-slate-800">{activeBank.accountNo}</span>
+                      </p>
+                      <p className="flex items-center justify-between gap-3">
+                        <span className="font-bold text-slate-800">Số tiền</span>
+                        <span className="font-black text-emerald-700">{formatMoney(totalAmount)}</span>
+                      </p>
+                      <p className="flex items-center justify-between gap-3">
+                        <span className="font-bold text-slate-800">Nội dung</span>
+                        <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono font-bold text-slate-800">
+                          NHWOW {order.id}
+                        </span>
+                      </p>
+                      <p className="truncate text-center text-[11px] font-bold text-slate-400" title={activeBank.accountName}>
+                        {activeBank.accountName}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-slate-100 bg-white p-3">
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={visibleItems.length === 0 || submitting}
+                  className="admin-primary-btn h-11 w-full text-xs font-black disabled:opacity-60"
+                >
+                  {submitting ? "Đang xử lý..." : "Thanh toán"}
+                </button>
+              </div>
             </aside>
           </div>
         )}
