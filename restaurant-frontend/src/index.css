@@ -121,6 +121,33 @@
     @apply absolute inset-0 rounded-full bg-emerald-500;
     animation: admin-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
+
+  .admin-menu-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.38) transparent;
+  }
+
+  .admin-menu-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .admin-menu-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .admin-menu-scroll::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.28);
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+
+  .admin-menu-scroll:hover::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.42);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
 }
 
 @keyframes admin-ping {

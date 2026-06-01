@@ -18,8 +18,6 @@ const STATUS_CONFIG = {
   da_dat: { label: "Đã đặt", color: "bg-orange-100 text-orange-700 border-orange-200" },
 };
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30];
-
 const renderStatusBadges = (item) => {
   const badges = [];
   
@@ -77,10 +75,8 @@ export default function TableOrder() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [orderId, setOrderId] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [cartPanelWidth, setCartPanelWidth] = useState(480);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [qrCartOpen, setQrCartOpen] = useState(false);
   const [serverItemsList, setServerItemsList] = useState([]);
 
@@ -345,11 +341,6 @@ export default function TableOrder() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, menu, cart.length]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredMenu.length / itemsPerPage));
-  const activePage = currentPage > totalPages ? totalPages : currentPage;
-  const startIndex = (activePage - 1) * itemsPerPage;
-  const paginatedMenu = filteredMenu.slice(startIndex, startIndex + itemsPerPage);
-
   const addToCart = (item) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.id === item.id);
@@ -592,10 +583,7 @@ export default function TableOrder() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Tìm món ăn..."
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               />
@@ -606,10 +594,7 @@ export default function TableOrder() {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => {
-                    setActiveCategory(cat.id);
-                    setCurrentPage(1);
-                  }}
+                  onClick={() => setActiveCategory(cat.id)}
                   className={`min-h-10 shrink-0 rounded-xl border px-3 text-xs font-black transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
                     activeCategory === cat.id
                       ? "border-emerald-700 bg-emerald-700 text-white"
@@ -625,36 +610,19 @@ export default function TableOrder() {
               <span className="text-[11px] font-bold text-slate-400">
                 {filteredMenu.length} món phù hợp
               </span>
-              <label className="flex items-center gap-2 text-[11px] font-black text-slate-500">
-                Hiển thị
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="h-8 rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs font-black text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  aria-label="Số món hiển thị mỗi trang"
-                >
-                  {PAGE_SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <span className="text-[11px] font-black text-slate-500">Cuộn để xem thêm</span>
             </div>
           </section>
 
-          {paginatedMenu.length === 0 ? (
+          {filteredMenu.length === 0 ? (
             <section className="flex min-h-64 flex-col items-center justify-center rounded-[14px] border border-dashed border-slate-200 bg-white/70 px-4 text-center">
               <MagnifyingGlass size={32} weight="duotone" className="mb-2 text-slate-300" />
               <p className="text-sm font-black text-slate-600">Không tìm thấy món phù hợp</p>
               <p className="mt-1 text-xs font-semibold text-slate-400">Thử đổi danh mục hoặc nhập từ khóa khác.</p>
             </section>
           ) : (
-            <section className="space-y-2">
-              {paginatedMenu.map((item) => {
+            <section className="admin-menu-scroll max-h-[calc(100dvh-18rem)] space-y-2 overflow-y-auto pr-1">
+              {filteredMenu.map((item) => {
                 const qty = getCartQty(item.id);
                 return (
                   <article
@@ -731,29 +699,6 @@ export default function TableOrder() {
             </section>
           )}
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between rounded-[14px] border border-slate-200/80 bg-white p-2 shadow-[0_8px_22px_rgba(15,23,42,0.035)]">
-              <button
-                type="button"
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={activePage === 1}
-                className="min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Trước
-              </button>
-              <span className="text-xs font-black text-slate-500">
-                Trang {activePage}/{totalPages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={activePage === totalPages}
-                className="min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-xs font-black text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Sau
-              </button>
-            </div>
-          )}
         </main>
 
         {qrCartOpen && (
@@ -1130,7 +1075,7 @@ export default function TableOrder() {
 
         {/* Menu */}
         <div className="flex min-h-[520px] flex-1 flex-col justify-between overflow-hidden rounded-[14px] border border-slate-200/80 bg-white p-3 shadow-[0_12px_32px_rgba(15,23,42,0.045)] sm:p-5 xl:min-h-0">
-          <div className="flex-1 overflow-auto">
+          <div className="admin-menu-scroll flex-1 overflow-auto">
             {/* Category Filter & Search Bar */}
             <div className="mb-4 flex flex-col gap-3 border-b border-slate-100 pb-3">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
@@ -1138,10 +1083,7 @@ export default function TableOrder() {
                 {allCategories.map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => {
-                      setActiveCategory(cat.id);
-                      setCurrentPage(1);
-                    }}
+                    onClick={() => setActiveCategory(cat.id)}
                     className={`min-h-9 rounded-xl border px-3 text-xs font-black transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${
                       activeCategory === cat.id
                         ? "border-emerald-700 bg-emerald-700 text-white"
@@ -1160,39 +1102,17 @@ export default function TableOrder() {
                     <input
                       type="text"
                       value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setCurrentPage(1);
-                      }}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Tìm món ăn..."
                       className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 text-xs font-semibold text-slate-800 outline-none transition-all placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100"
                     />
                   </div>
-
-                  <label className="flex min-h-9 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-[11px] font-black text-slate-500">
-                    <span className="whitespace-nowrap">Hiển thị</span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="h-7 rounded-lg border border-slate-200 bg-white px-2 text-xs font-black text-slate-700 outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                      aria-label="Số món hiển thị mỗi trang"
-                    >
-                      {PAGE_SIZE_OPTIONS.map((size) => (
-                        <option key={size} value={size}>
-                          {size} món
-                        </option>
-                      ))}
-                    </select>
-                  </label>
                 </div>
               </div>
             </div>
 
             {/* Menu Grid */}
-            {paginatedMenu.length === 0 ? (
+            {filteredMenu.length === 0 ? (
               <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 text-center">
                 <MagnifyingGlass size={32} weight="duotone" className="mb-2 text-slate-300" />
                 <p className="text-sm font-black text-slate-600">Không tìm thấy món phù hợp</p>
@@ -1200,7 +1120,7 @@ export default function TableOrder() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {paginatedMenu.map((item) => {
+                {filteredMenu.map((item) => {
                 const qty = getCartQty(item.id);
                 return (
                   <div
@@ -1276,40 +1196,6 @@ export default function TableOrder() {
             )}
           </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-gray-100 bg-white rounded-xl p-2 shadow-sm">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={activePage === 1}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
-              >
-                ← Trước
-              </button>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 rounded-lg border text-xs font-bold transition-colors ${
-                    activePage === page
-                      ? "bg-emerald-700 border-emerald-700 text-white"
-                      : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={activePage === totalPages}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-semibold transition-colors"
-              >
-                Sau →
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
