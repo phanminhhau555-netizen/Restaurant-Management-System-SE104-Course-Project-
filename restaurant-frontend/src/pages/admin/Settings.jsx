@@ -88,6 +88,8 @@ export default function SettingsPage() {
   };
 
   const formatMoney = (amount) => new Intl.NumberFormat("vi-VN").format(amount);
+  const saveLabel = saveState === "saving" ? "Đang lưu..." : saveState === "saved" ? "Đã lưu" : "Lưu cấu hình";
+  const qrPreviewUrl = `https://img.vietqr.io/image/${bankId || "VCB"}-${accountNo || "000000"}-compact2.png?amount=${totalAmount}&addInfo=NHWOW%20PREVIEW&accountName=${encodeURIComponent(accountName || "")}`;
 
   return (
     <Layout>
@@ -97,6 +99,21 @@ export default function SettingsPage() {
             <p className="admin-kicker">Cài đặt</p>
             <h1 className="admin-title">Cấu hình hệ thống</h1>
           </div>
+          <div className="flex items-center gap-3">
+            {saveState === "saved" ? (
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                Đã lưu cấu hình
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saveState === "saving"}
+              className="admin-primary-btn"
+            >
+              {saveLabel}
+            </button>
+          </div>
         </header>
 
         {saveState === "error" && (
@@ -105,226 +122,216 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <div className="grid gap-4 xl:grid-cols-[320px_1fr]">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] max-w-6xl mx-auto">
           <div className="space-y-4">
-            {/* Thuế */}
-            <section className="admin-panel-pad">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <Percent size={23} weight="bold" />
-                </span>
-                <div>
-                  <h2 className="text-base font-bold text-gray-900">Cấu hình Thuế</h2>
+            <section className="admin-panel overflow-hidden">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <Percent size={21} weight="bold" />
+                  </span>
+                  <h2 className="admin-section-title">Thuế & thanh toán</h2>
                 </div>
               </div>
-              <label className="block text-xs font-semibold text-gray-500">
-                Thuế VAT hiện tại (%)
-                <div className="mt-2 flex h-12 overflow-hidden rounded-xl bg-gray-50 ring-1 ring-gray-100 focus-within:ring-2 focus-within:ring-emerald-500">
-                  <input
-                    type="number" min="0" max="100"
-                    value={vatRate}
-                    onChange={(e) => setVatRate(e.target.value)}
-                    className="min-w-0 flex-1 bg-transparent px-4 text-sm font-bold text-gray-800 outline-none"
-                  />
-                  <span className="flex items-center px-4 text-sm font-bold text-gray-400">%</span>
+
+              <div className="grid gap-4 p-5 lg:grid-cols-[220px_1fr]">
+                <label className="admin-label">
+                  Thuế VAT (%)
+                  <div className="mt-1.5 flex min-h-11 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 transition focus-within:border-emerald-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={vatRate}
+                      onChange={(e) => setVatRate(e.target.value)}
+                      className="min-w-0 flex-1 bg-transparent px-3 text-sm font-bold text-slate-800 outline-none"
+                    />
+                    <span className="flex items-center border-l border-slate-200 bg-white px-3 text-sm font-black text-slate-400">%</span>
+                  </div>
+                </label>
+
+                <div>
+                  <p className="admin-label mb-1.5">Phương thức thanh toán</p>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    {paymentMethods.map((method) => {
+                      const Icon = method.icon;
+                      return (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => toggleMethod(method.id)}
+                          className={`flex min-h-16 items-center justify-between gap-3 rounded-xl border px-3 text-left transition-colors ${
+                            method.active
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                              : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-white"
+                          }`}
+                          aria-pressed={method.active}
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <Icon size={19} weight="duotone" className="shrink-0" />
+                            <span className="truncate text-sm font-black">{method.name}</span>
+                          </span>
+                          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${method.active ? "bg-emerald-600" : "bg-slate-300"}`} />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </label>
+              </div>
             </section>
 
-            {/* Tài khoản QR */}
-            <section className="admin-panel-pad">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                  <Bank size={23} weight="bold" />
-                </span>
-                <div>
-                  <h2 className="text-base font-bold text-gray-900">Tài khoản QR</h2>
+            <section className="admin-panel overflow-hidden">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <Bank size={21} weight="duotone" />
+                  </span>
+                  <h2 className="admin-section-title">Tài khoản QR</h2>
                 </div>
               </div>
-              
-              <div className="space-y-3">
-                <label className="block text-xs font-semibold text-gray-500">
-                  Mã Ngân hàng
+
+              <div className="grid gap-4 p-5 md:grid-cols-3">
+                <label className="admin-label">
+                  Mã ngân hàng
                   <input
                     type="text"
                     value={bankId}
                     onChange={(e) => setBankId(e.target.value)}
-                    className="mt-1.5 w-full h-10 rounded-xl bg-gray-50 px-3 text-xs font-bold text-gray-800 ring-1 ring-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                    placeholder="Ví dụ: VCB"
+                    className="admin-field mt-1.5"
+                    placeholder="VCB"
                   />
                 </label>
-
-                <label className="block text-xs font-semibold text-gray-500">
+                <label className="admin-label">
                   Số tài khoản
                   <input
                     type="text"
                     value={accountNo}
                     onChange={(e) => setAccountNo(e.target.value)}
-                    className="mt-1.5 w-full h-10 rounded-xl bg-gray-50 px-3 text-xs font-bold text-gray-800 ring-1 ring-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                    placeholder="Nhập số tài khoản"
+                    className="admin-field mt-1.5"
                   />
                 </label>
-
-                <label className="block text-xs font-semibold text-gray-500">
+                <label className="admin-label">
                   Tên chủ tài khoản
                   <input
                     type="text"
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
-                    className="mt-1.5 w-full h-10 rounded-xl bg-gray-50 px-3 text-xs font-bold text-gray-800 ring-1 ring-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                    placeholder="Nhập tên viết liền không dấu"
+                    className="admin-field mt-1.5"
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className="admin-panel overflow-hidden">
+              <div className="border-b border-slate-100 px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                    <Receipt size={21} weight="duotone" />
+                  </span>
+                  <h2 className="admin-section-title">Mẫu hóa đơn</h2>
+                </div>
+              </div>
+
+              <div className="space-y-4 p-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="admin-label">
+                    Tiêu đề hóa đơn
+                    <input
+                      type="text"
+                      value={invoiceTitle}
+                      onChange={(e) => setInvoiceTitle(e.target.value)}
+                      className="admin-field mt-1.5"
+                    />
+                  </label>
+                  <label className="admin-label">
+                    Lời chào chân trang
+                    <input
+                      type="text"
+                      value={footerText}
+                      onChange={(e) => setFooterText(e.target.value)}
+                      className="admin-field mt-1.5"
+                    />
+                  </label>
+                </div>
+
+                <label className="admin-label">
+                  Thông tin liên hệ
+                  <textarea
+                    value={contactInfo}
+                    onChange={(e) => setContactInfo(e.target.value)}
+                    rows={3}
+                    className="admin-field mt-1.5 h-auto resize-none py-3"
                   />
                 </label>
               </div>
             </section>
           </div>
 
-          {/* Phương thức thanh toán */}
-          <section className="admin-panel-pad">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                <Bank size={23} weight="duotone" />
-              </span>
+          <aside className="xl:sticky xl:top-4 h-fit">
+            <div className="w-full bg-white px-6 py-6 shadow-[0_22px_50px_rgba(15,23,42,0.12)] rounded-2xl space-y-6 border border-slate-100">
+              {/* QR Pay Section (on top) */}
               <div>
-                <h2 className="text-base font-bold text-gray-900">Phương thức thanh toán</h2>
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              {paymentMethods.map((method) => {
-                const Icon = method.icon;
-                return (
-                  <article
-                    key={method.id}
-                    className={`rounded-xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${
-                      method.active ? "border-emerald-100 bg-white shadow-sm ring-2 ring-emerald-100" : "border-gray-100 bg-gray-50 opacity-70"
-                    }`}
-                  >
-                    <div className="mb-5 flex items-start justify-between gap-3">
-                      <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${method.active ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                        <Icon size={18} weight="duotone" />
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleMethod(method.id)}
-                        className={`flex h-7 w-12 items-center rounded-full p-1 transition-colors ${method.active ? "justify-end bg-emerald-600" : "justify-start bg-gray-300"}`}
-                        aria-pressed={method.active}
-                      >
-                        <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
-                      </button>
-                    </div>
-                    <h3 className="text-sm font-bold text-gray-800">{method.name}</h3>
-                    <p className={`mt-4 text-xs font-bold ${method.active ? "text-emerald-600" : "text-gray-400"}`}>
-                      {method.active ? "Đang bật" : "Đã tắt"}
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[390px_1fr]">
-          {/* Preview hóa đơn */}
-          <section className="rounded-[18px] border border-slate-200/80 bg-slate-50 p-4">
-            <p className="mb-4 text-center text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">
-              Xem trước hóa đơn
-            </p>
-            <div className="mx-auto max-w-[280px] bg-white px-6 py-6 shadow-[0_22px_50px_rgba(15,23,42,0.14)]">
-              <div className="mb-5 flex flex-col items-center text-center">
-                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-sm bg-stone-100 text-stone-600">
-                  <Receipt size={22} weight="duotone" />
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    QR Pay
+                  </p>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-black ${enabledMethods.includes("qr") ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
+                    {enabledMethods.includes("qr") ? "Đang bật" : "Đã tắt"}
+                  </span>
                 </div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-800">
-                  {invoiceTitle || "Tên nhà hàng"}
-                </p>
-                <p className="mt-2 text-[10px] font-medium text-gray-500">
-                  {contactInfo || "Địa chỉ và số điện thoại"}
-                </p>
-              </div>
-              <div className="space-y-3 border-y border-dashed border-gray-200 py-4">
-                <div className="flex justify-between text-xs font-semibold text-gray-700">
-                  <span>Sườn Nướng BBQ x1</span><span>180,000</span>
-                </div>
-                <div className="flex justify-between text-xs font-semibold text-gray-700">
-                  <span>Coca Cola x2</span><span>40,000</span>
-                </div>
-              </div>
-              <div className="space-y-2 border-b border-dashed border-gray-200 py-4">
-                <div className="flex justify-between text-xs font-bold text-gray-900">
-                  <span>Tạm tính:</span><span>{formatMoney(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold text-gray-900">
-                  <span>VAT ({safeVatRate}%):</span><span>{formatMoney(vatAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm font-black text-gray-900">
-                  <span>Tổng cộng:</span><span>{formatMoney(totalAmount)}</span>
-                </div>
-              </div>
-              <p className="mt-5 text-center text-[10px] font-semibold italic text-slate-400">
-                {footerText}
-              </p>
-            </div>
-          </section>
-
-          {/* Form cài đặt hóa đơn */}
-          <section className="admin-panel-pad">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-500">
-                <Receipt size={23} weight="duotone" />
-              </span>
-              <div>
-                <h2 className="text-base font-bold text-gray-900">Cài đặt mẫu hóa đơn</h2>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-xs font-bold text-gray-700">
-                  Tiêu đề hóa đơn (Tên nhà hàng)
-                  <input
-                    type="text" value={invoiceTitle}
-                    onChange={(e) => setInvoiceTitle(e.target.value)}
-                    className="mt-2 h-12 w-full rounded-xl border border-gray-100 bg-gray-50 px-4 text-sm font-semibold text-gray-700 outline-none transition-colors focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </label>
-                <label className="block text-xs font-bold text-gray-700">
-                  Lời chào chân trang
-                  <input
-                    type="text" value={footerText}
-                    onChange={(e) => setFooterText(e.target.value)}
-                    className="mt-2 h-12 w-full rounded-xl border border-gray-100 bg-gray-50 px-4 text-sm font-semibold italic text-gray-700 outline-none transition-colors focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
-                  />
-                </label>
-              </div>
-
-              <label className="block text-xs font-bold text-gray-700">
-                Thông tin liên hệ (Địa chỉ/SĐT)
-                <textarea
-                  value={contactInfo}
-                  onChange={(e) => setContactInfo(e.target.value)}
-                  rows={3}
-                  className="mt-2 w-full resize-none rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 outline-none transition-colors focus:border-emerald-300 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                <img
+                  src={qrPreviewUrl}
+                  alt="Xem trước mã QR Pay"
+                  className="mx-auto aspect-square w-full rounded-xl bg-slate-50 object-contain p-2"
                 />
-              </label>
+                <div className="mt-3 space-y-1 rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
+                  <p><span className="text-slate-400">Ngân hàng:</span> {bankId || "VCB"}</p>
+                  <p><span className="text-slate-400">Số tài khoản:</span> {accountNo || "000000"}</p>
+                  <p><span className="text-slate-400">Số tiền mẫu:</span> {formatMoney(totalAmount)}đ</p>
+                </div>
+              </div>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs font-medium text-gray-400">
-                  {saveState === "saved" ? "✓ Đã lưu cấu hình." :
-                   saveState === "error" ? "Lưu thất bại." :
-                   ""}
+              {/* Divider line */}
+              <div className="border-t border-dashed border-slate-200"></div>
+
+              {/* Invoice Section (below) */}
+              <div>
+                <div className="mb-5 flex flex-col items-center text-center">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-sm bg-stone-100 text-stone-600">
+                    <Receipt size={22} weight="duotone" />
+                  </div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-gray-800">
+                    {invoiceTitle || "Tên nhà hàng"}
+                  </p>
+                  <p className="mt-2 text-[10px] font-medium text-gray-500">
+                    {contactInfo || "Địa chỉ và số điện thoại"}
+                  </p>
+                </div>
+                <div className="space-y-3 border-y border-dashed border-gray-200 py-4">
+                  <div className="flex justify-between text-xs font-semibold text-gray-700">
+                    <span>Sườn Nướng BBQ x1</span><span>180,000</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-semibold text-gray-700">
+                    <span>Coca Cola x2</span><span>40,000</span>
+                  </div>
+                </div>
+                <div className="space-y-2 border-b border-dashed border-gray-200 py-4">
+                  <div className="flex justify-between text-xs font-bold text-gray-900">
+                    <span>Tạm tính:</span><span>{formatMoney(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-gray-900">
+                    <span>VAT ({safeVatRate}%):</span><span>{formatMoney(vatAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-black text-gray-900">
+                    <span>Tổng cộng:</span><span>{formatMoney(totalAmount)}</span>
+                  </div>
+                </div>
+                <p className="mt-5 text-center text-[10px] font-semibold italic text-slate-400">
+                  {footerText}
                 </p>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saveState === "saving"}
-                  className="min-h-11 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {saveState === "saving" ? "Đang lưu..." : saveState === "saved" ? "Đã lưu ✓" : "Lưu cấu hình"}
-                </button>
               </div>
             </div>
-          </section>
+          </aside>
         </div>
       </div>
     </Layout>
