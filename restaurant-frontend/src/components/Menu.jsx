@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle,
   ForkKnife,
+  MagnifyingGlass,
   PencilSimple,
   Plus,
   Tag,
@@ -69,8 +70,7 @@ export default function Menu({ permissions = {} }) {
   const [success, setSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 5;
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -126,11 +126,24 @@ export default function Menu({ permissions = {} }) {
   );
 
   const filtered = useMemo(() => {
-    if (activeCategory === null) {
-      return menu;
-    }
-    return menu.filter((item) => item.category_id === activeCategory);
-  }, [activeCategory, menu]);
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return menu.filter((item) => {
+      const matchesCategory = activeCategory === null || item.category_id === activeCategory;
+      if (!matchesCategory) return false;
+      if (!normalizedSearch) return true;
+
+      const sku = `df-${String(item.id).padStart(4, "0")}`;
+      const categoryLabel =
+        categories.find((category) => category.id === item.category_id)?.name?.toLowerCase() || "";
+
+      return (
+        item.name?.toLowerCase().includes(normalizedSearch) ||
+        sku.includes(normalizedSearch) ||
+        categoryLabel.includes(normalizedSearch)
+      );
+    });
+  }, [activeCategory, menu, searchTerm, categories]);
 
   const fetchMenu = async () => {
     try {
@@ -316,7 +329,6 @@ export default function Menu({ permissions = {} }) {
       setSuccess("Đã thêm danh mục mới.");
       if (category?.id || categoryData[0]?.id) {
         setActiveCategory(category?.id || categoryData[0].id);
-        setPage(1);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Không thêm được danh mục.");
@@ -440,10 +452,6 @@ export default function Menu({ permissions = {} }) {
   const getCategoryTone = (id) =>
     CATEGORY_TONES[Math.abs(Number(id) || 0) % CATEGORY_TONES.length];
 
-  // Pagination
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated = filtered.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
   return (
     <Layout>
       <div className="admin-page">
@@ -481,27 +489,46 @@ export default function Menu({ permissions = {} }) {
           <div className="mb-4 flex gap-4">
             {/* Filter */}
             <div className="admin-panel-pad flex-1">
-              <div className="flex items-center justify-between mb-3">
+              <div className="mb-3 flex items-center justify-between gap-4">
                 <p className="admin-section-title">Danh mục nhanh</p>
-                {canManageCategories ? (
-                  <button
-                    type="button"
-                    onClick={() => setCategoryManagerOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-50"
-                  >
-                    <Tag size={14} weight="bold" />
-                    Quản lý danh mục
-                  </button>
-                ) : null}
+                <div className="flex items-center gap-2">
+                  <div className="flex h-10 w-[320px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 shadow-sm transition focus-within:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-100">
+                    <MagnifyingGlass size={17} className="shrink-0 text-slate-400" weight="bold" />
+                    <input
+                      type="search"
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder="Tìm món, mã DF, danh mục"
+                      className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400"
+                    />
+                    {searchTerm ? (
+                      <button
+                        type="button"
+                        onClick={() => setSearchTerm("")}
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                        aria-label="Xóa tìm kiếm"
+                      >
+                        <X size={14} weight="bold" />
+                      </button>
+                    ) : null}
+                  </div>
+                  {canManageCategories ? (
+                    <button
+                      type="button"
+                      onClick={() => setCategoryManagerOpen(true)}
+                      className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-xs font-black text-emerald-700 transition-colors hover:bg-emerald-50"
+                    >
+                      <Tag size={14} weight="bold" />
+                      Quản lý danh mục
+                    </button>
+                  ) : null}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {allCategories.map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => {
-                      setActiveCategory(cat.id);
-                      setPage(1);
-                    }}
+                    onClick={() => setActiveCategory(cat.id)}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                       activeCategory === cat.id
                         ? "bg-emerald-700 text-white"
@@ -521,158 +548,100 @@ export default function Menu({ permissions = {} }) {
             </div>
           </div>
 
-          {/* Table */}
+          {/* Menu list */}
           <div className="admin-panel overflow-hidden">
-            <table className="admin-table">
-              <thead>
-                <tr className="text-xs text-gray-400 border-b border-gray-100">
-                  <th className="text-left px-5 py-4">THÔNG TIN MÓN</th>
-                  <th className="text-left px-5 py-4">DANH MỤC</th>
-                  <th className="text-left px-5 py-4">GIÁ BÁN</th>
-                  <th className="text-left px-5 py-4">TRẠNG THÁI</th>
-                  <th className="text-left px-5 py-4">THAO TÁC</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-gray-400">
-                      Đang tải...
-                    </td>
-                  </tr>
-                ) : paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-12 text-gray-400">
-                      <ForkKnife size={34} className="mx-auto mb-2 text-slate-300" weight="duotone" />
-                      <p>Chưa có món ăn nào</p>
-                    </td>
-                  </tr>
-                ) : (
-                  paginated.map((item) => {
-                    return (
-                    <tr
-                      key={item.id}
-                      tabIndex={0}
-                      onClick={() => showRecipePreview(item)}
-                      onKeyDown={(event) => handleRecipePreviewKeyDown(event, item)}
-                      className="group cursor-pointer outline-none transition-colors hover:bg-green-50/40 focus:bg-green-50/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-green-400 focus-within:bg-green-50/50"
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
-                            {item.image_url ? (
-                              <img
-                                src={item.image_url}
-                                alt={item.name}
-                                className="w-10 h-10 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <ForkKnife size={20} className="text-slate-400" weight="duotone" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-800 text-sm">{item.name}</p>
-                            <p className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
-                              <span>SKU: DF-{String(item.id).padStart(4, "0")}</span>
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Danh mục */}
-                      <td className="px-5 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryTone(item.category_id)}`}>
-                          {getCategoryLabel(item.category_id)}
-                        </span>
-                      </td>
-
-                      {/* Giá */}
-                      <td className="px-5 py-4 text-sm text-gray-800 font-medium">
-                        {formatMoney(item.price)}
-                      </td>
-
-                      {/* Trạng thái */}
-                      <td className="px-5 py-4">
-                        <span className={`flex items-center gap-1 text-sm ${STATUS_COLOR[item.is_visible]}`}>
-                          <span className={`w-2 h-2 rounded-full ${item.is_visible ? "bg-green-500" : "bg-gray-300"}`}></span>
-                          {item.is_visible ? "Sẵn sàng" : "Đã ẩn"}
-                        </span>
-                      </td>
-
-                      {/* Thao tác */}
-                      <td className="px-5 py-4">
-                        {canToggleMenuItem || canDeleteMenuItem ? (
-                          <div className="flex items-center gap-2">
-                            {canToggleMenuItem ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleToggle(item.id);
-                                }}
-                                className="text-xs font-bold text-blue-600 hover:text-blue-700"
-                              >
-                                {item.is_visible ? "Ẩn" : "Hiện"}
-                              </button>
-                            ) : null}
-                            {canToggleMenuItem && canDeleteMenuItem ? (
-                              <span className="text-gray-200">|</span>
-                            ) : null}
-                            {canDeleteMenuItem ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(item.id);
-                                }}
-                                className="text-xs font-bold text-red-400 hover:text-red-600"
-                              >
-                                Xóa
-                              </button>
-                            ) : null}
-                          </div>
+            {loading ? (
+              <div className="px-5 py-12 text-center text-sm font-bold text-slate-400">
+                Đang tải...
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="px-5 py-12 text-center text-sm font-bold text-slate-400">
+                <ForkKnife size={34} className="mx-auto mb-2 text-slate-300" weight="duotone" />
+                <p>Chưa có món ăn nào</p>
+              </div>
+            ) : (
+              <div className="admin-menu-scroll max-h-[calc(100vh-300px)] min-h-[360px] divide-y divide-slate-100 overflow-y-auto">
+                {filtered.map((item) => (
+                  <article
+                    key={item.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => showRecipePreview(item)}
+                    onKeyDown={(event) => handleRecipePreviewKeyDown(event, item)}
+                    className="group flex cursor-pointer items-center justify-between gap-4 px-5 py-4 outline-none transition-colors hover:bg-emerald-50/45 focus:bg-emerald-50/55 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-lg ring-1 ring-slate-100">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
-                          <span className="text-xs font-bold text-slate-300">Chỉ xem</span>
+                          <ForkKnife size={22} className="text-slate-400" weight="duotone" />
                         )}
-                      </td>
-                    </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="max-w-[260px] truncate text-sm font-black text-slate-900 sm:max-w-[340px]">
+                            {item.name}
+                          </p>
+                          <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${getCategoryTone(item.category_id)}`}>
+                            {getCategoryLabel(item.category_id)}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-400">
+                          <span>DF-{String(item.id).padStart(4, "0")}</span>
+                          <span className="text-slate-200">•</span>
+                          <span className={`inline-flex items-center gap-1.5 ${STATUS_COLOR[item.is_visible]}`}>
+                            <span className={`h-2 w-2 rounded-full ${item.is_visible ? "bg-emerald-500" : "bg-slate-300"}`} />
+                            {item.is_visible ? "Sẵn sàng" : "Đã ẩn"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100">
-                <p className="text-xs text-gray-400">{filtered.length} món</p>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 disabled:opacity-30 hover:bg-gray-50"
-                  >
-                    ‹
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                        page === p
-                          ? "bg-green-500 text-white"
-                          : "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 disabled:opacity-30 hover:bg-gray-50"
-                  >
-                    ›
-                  </button>
-                </div>
+                    <div className="flex shrink-0 items-center justify-end gap-3">
+                      <p className="text-sm font-black text-slate-900">{formatMoney(item.price)}</p>
+                      {canToggleMenuItem || canDeleteMenuItem ? (
+                        <div className="flex items-center gap-2">
+                          {canToggleMenuItem ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggle(item.id);
+                              }}
+                              className={`rounded-lg px-3 py-2 text-xs font-black transition-colors ${
+                                item.is_visible
+                                  ? "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                              }`}
+                            >
+                              {item.is_visible ? "Ẩn" : "Hiện"}
+                            </button>
+                          ) : null}
+                          {canDeleteMenuItem ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item.id);
+                              }}
+                              className="flex h-9 w-9 items-center justify-center rounded-lg text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                              aria-label={`Xóa ${item.name}`}
+                            >
+                              <Trash size={16} weight="bold" />
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-xs font-bold text-slate-300">Chỉ xem</span>
+                      )}
+                    </div>
+                  </article>
+                ))}
               </div>
             )}
           </div>
