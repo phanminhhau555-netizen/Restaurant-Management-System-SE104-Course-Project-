@@ -77,12 +77,6 @@ export default function TablesPage() {
       setLoading(false);
     }
   };
-
-  const handleSelectTable = (table) => {
-    if (table.status === "da_dat") return;
-    navigate(`/staff/tables/${table.id}/order`);
-  };
-
   const handleUpdateTableStatus = async (tableId, nextStatus, reservedAt = null) => {
     try {
       await API.patch(`/api/tables/${tableId}/status`, { 
