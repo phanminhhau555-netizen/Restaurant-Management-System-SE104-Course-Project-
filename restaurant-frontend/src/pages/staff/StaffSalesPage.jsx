@@ -590,11 +590,10 @@ export default function StaffSalesPage() {
                         type="tel"
                         value={checkoutCustomerPhone}
                         onChange={(event) => {
-                          setCheckoutCustomerPhone(event.target.value);
-                          setCheckoutCustomer(null);
-                          setCheckoutCustomerMessage("");
-                          setCheckoutCustomerWasCreated(false);
-                        }}
+                        setCheckoutCustomerPhone(event.target.value);
+                        setCheckoutCustomer(null); 
+                        setCheckoutCustomerMessage(""); 
+                      }}
                         onBlur={() => {
                           if (checkoutCustomerPhone.trim()) lookupCheckoutCustomer().catch(() => {});
                         }}
