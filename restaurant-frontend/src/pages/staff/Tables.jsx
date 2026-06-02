@@ -1,6 +1,6 @@
  import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowClockwise, CalendarBlank, Users } from "@phosphor-icons/react";
+import { CalendarBlank, Users } from "@phosphor-icons/react";
 import API from "../../services/api";
 
 const STATUS_CONFIG = {
@@ -152,10 +152,6 @@ export default function TablesPage() {
               Sơ đồ bàn
             </h1>
           </div>
-          <button onClick={fetchTables} className="admin-secondary-btn">
-            <ArrowClockwise size={15} weight="bold" />
-            Làm mới
-          </button>
         </div>
       </header>
 

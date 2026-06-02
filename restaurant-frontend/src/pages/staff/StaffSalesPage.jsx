@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { ArrowClockwise, CalendarBlank, Clock, MagnifyingGlass, Receipt, User, Users, Money, CreditCard, QrCode } from "@phosphor-icons/react";
+import { CalendarBlank, Clock, MagnifyingGlass, Receipt, User, Users, Money, CreditCard, QrCode } from "@phosphor-icons/react";
 import API from "../../services/api";
 
 const STATUS_CONFIG = {
@@ -270,10 +270,6 @@ export default function StaffSalesPage() {
               Quản lý bán hàng
             </h1>
           </div>
-          <button onClick={fetchOrders} className="admin-secondary-btn">
-            <ArrowClockwise size={15} weight="bold" />
-            Làm mới
-          </button>
         </div>
       </header>
 

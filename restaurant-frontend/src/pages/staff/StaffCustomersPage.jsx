@@ -390,18 +390,9 @@ export default function StaffCustomersPage() {
                 <div>
                   <p className="admin-section-title">Lịch sử tích điểm</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                    {pointsHistory.length} giao dịch
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => loadHistory(customer.id)}
-                    className="admin-secondary-btn px-2.5"
-                  >
-                    <ArrowClockwise size={14} weight="bold" />
-                  </button>
-                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                  {pointsHistory.length} giao dịch
+                </span>
               </div>
 
               {historyLoading ? (
