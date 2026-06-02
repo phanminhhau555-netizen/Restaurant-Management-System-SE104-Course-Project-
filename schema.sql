@@ -71,7 +71,7 @@ CREATE TABLE menu_items (
   id INT PRIMARY KEY AUTO_INCREMENT,
   name VARCHAR(100) NOT NULL,
   description TEXT,
-  price DECIMAL(10,2) NOT NULL,
+  price BIGINT NOT NULL DEFAULT 0,
   category_id INT,
   image_url VARCHAR(255),
   is_visible BOOLEAN DEFAULT TRUE,

@@ -76,36 +76,36 @@ WHERE NOT EXISTS (
 INSERT INTO menu_items (name, description, price, category_id, image_url, is_visible)
 SELECT name, description, price, category_id, NULL, 1
 FROM (
-  SELECT 'Cơm bò lúc lắc' AS name, 'Bò xào mềm, ăn kèm cơm trắng và rau tươi.' AS description, 79000.00 AS price, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') AS category_id UNION ALL
-  SELECT 'Cơm gà xối mỡ', 'Gà chiên da giòn, cơm nóng và nước mắm chua ngọt.', 69000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Cơm sườn nướng', 'Sườn heo nướng đậm vị, ăn kèm dưa leo và cà chua.', 75000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Cơm tấm đặc biệt', 'Sườn, trứng, chả ăn cùng cơm tấm và nước mắm.', 85000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Phở bò tái', 'Phở bò nước dùng thơm, thịt bò tái mềm.', 65000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Phở gà', 'Phở gà thanh vị, dùng kèm rau thơm và chanh.', 59000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Bún bò Huế', 'Bún bò cay nhẹ, thơm sả, nước dùng đậm đà.', 69000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Bún thịt nướng', 'Thịt heo nướng, bún tươi, rau sống và nước mắm.', 62000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Mì xào hải sản', 'Mì trứng xào tôm, mực và rau cải.', 79000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Mì xào bò', 'Mì trứng xào bò, rau cải và sốt đậm vị.', 72000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Gà kho sả ớt', 'Gà kho thơm sả, cay nhẹ, ăn kèm cơm trắng.', 72000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Cá chiên nước mắm', 'Cá phi lê chiên giòn áo nước mắm tỏi.', 78000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Tôm rang me', 'Tôm rang sốt me chua ngọt hấp dẫn.', 89000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Mực xào sa tế', 'Mực xào sa tế cùng rau cải và hành tỏi.', 89000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Đậu hũ nấm sốt tiêu', 'Đậu hũ và nấm sốt tiêu thơm, phù hợp món chay.', 59000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Lẩu nấm hải sản', 'Lẩu nấm với tôm, mực, rau và nước dùng ngọt thanh.', 189000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
-  SELECT 'Gỏi cuốn tôm thịt', 'Gỏi cuốn tươi với tôm, thịt, rau và bún.', 49000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
-  SELECT 'Chả giò hải sản', 'Chả giò nhân hải sản chiên giòn.', 59000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
-  SELECT 'Khoai tây chiên', 'Khoai tây chiên giòn dùng kèm sốt.', 39000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
-  SELECT 'Salad bò', 'Xà lách, dưa leo, cà chua và bò xào mềm.', 69000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
-  SELECT 'Rau cải xào tỏi', 'Rau cải xào nhanh với tỏi thơm.', 39000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
-  SELECT 'Trứng chiên thịt bằm', 'Trứng chiên cùng thịt bằm và hành lá.', 45000.00, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
-  SELECT 'Cà phê sữa đá', 'Cà phê phin pha sữa đặc, dùng với đá.', 29000.00, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
-  SELECT 'Trà đào cam sả', 'Trà trái cây thơm cam, đào và sả.', 39000.00, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
-  SELECT 'Nước cam ép', 'Cam tươi ép nguyên chất.', 39000.00, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
-  SELECT 'Nước suối', 'Nước suối đóng chai.', 12000.00, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
-  SELECT 'Coca-Cola', 'Nước ngọt có gas dùng lạnh.', 18000.00, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
-  SELECT 'Chè đậu xanh', 'Chè đậu xanh nước cốt dừa béo nhẹ.', 29000.00, (SELECT MIN(id) FROM categories WHERE name = 'Tráng miệng') UNION ALL
-  SELECT 'Chuối chiên', 'Chuối chiên giòn, ngọt thơm.', 32000.00, (SELECT MIN(id) FROM categories WHERE name = 'Tráng miệng') UNION ALL
-  SELECT 'Dưa hấu tráng miệng', 'Dưa hấu cắt miếng dùng lạnh.', 29000.00, (SELECT MIN(id) FROM categories WHERE name = 'Tráng miệng')
+  SELECT 'Cơm bò lúc lắc' AS name, 'Bò xào mềm, ăn kèm cơm trắng và rau tươi.' AS description, 79000 AS price, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') AS category_id UNION ALL
+  SELECT 'Cơm gà xối mỡ', 'Gà chiên da giòn, cơm nóng và nước mắm chua ngọt.', 69000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Cơm sườn nướng', 'Sườn heo nướng đậm vị, ăn kèm dưa leo và cà chua.', 75000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Cơm tấm đặc biệt', 'Sườn, trứng, chả ăn cùng cơm tấm và nước mắm.', 85000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Phở bò tái', 'Phở bò nước dùng thơm, thịt bò tái mềm.', 65000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Phở gà', 'Phở gà thanh vị, dùng kèm rau thơm và chanh.', 59000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Bún bò Huế', 'Bún bò cay nhẹ, thơm sả, nước dùng đậm đà.', 69000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Bún thịt nướng', 'Thịt heo nướng, bún tươi, rau sống và nước mắm.', 62000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Mì xào hải sản', 'Mì trứng xào tôm, mực và rau cải.', 79000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Mì xào bò', 'Mì trứng xào bò, rau cải và sốt đậm vị.', 72000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Gà kho sả ớt', 'Gà kho thơm sả, cay nhẹ, ăn kèm cơm trắng.', 72000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Cá chiên nước mắm', 'Cá phi lê chiên giòn áo nước mắm tỏi.', 78000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Tôm rang me', 'Tôm rang sốt me chua ngọt hấp dẫn.', 89000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Mực xào sa tế', 'Mực xào sa tế cùng rau cải và hành tỏi.', 89000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Đậu hũ nấm sốt tiêu', 'Đậu hũ và nấm sốt tiêu thơm, phù hợp món chay.', 59000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Lẩu nấm hải sản', 'Lẩu nấm với tôm, mực, rau và nước dùng ngọt thanh.', 189000, (SELECT MIN(id) FROM categories WHERE name = 'Món chính') UNION ALL
+  SELECT 'Gỏi cuốn tôm thịt', 'Gỏi cuốn tươi với tôm, thịt, rau và bún.', 49000, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
+  SELECT 'Chả giò hải sản', 'Chả giò nhân hải sản chiên giòn.', 59000, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
+  SELECT 'Khoai tây chiên', 'Khoai tây chiên giòn dùng kèm sốt.', 39000, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
+  SELECT 'Salad bò', 'Xà lách, dưa leo, cà chua và bò xào mềm.', 69000, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
+  SELECT 'Rau cải xào tỏi', 'Rau cải xào nhanh với tỏi thơm.', 39000, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
+  SELECT 'Trứng chiên thịt bằm', 'Trứng chiên cùng thịt bằm và hành lá.', 45000, (SELECT MIN(id) FROM categories WHERE name = 'Món phụ') UNION ALL
+  SELECT 'Cà phê sữa đá', 'Cà phê phin pha sữa đặc, dùng với đá.', 29000, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
+  SELECT 'Trà đào cam sả', 'Trà trái cây thơm cam, đào và sả.', 39000, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
+  SELECT 'Nước cam ép', 'Cam tươi ép nguyên chất.', 39000, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
+  SELECT 'Nước suối', 'Nước suối đóng chai.', 12000, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
+  SELECT 'Coca-Cola', 'Nước ngọt có gas dùng lạnh.', 18000, (SELECT MIN(id) FROM categories WHERE name = 'Đồ uống') UNION ALL
+  SELECT 'Chè đậu xanh', 'Chè đậu xanh nước cốt dừa béo nhẹ.', 29000, (SELECT MIN(id) FROM categories WHERE name = 'Tráng miệng') UNION ALL
+  SELECT 'Chuối chiên', 'Chuối chiên giòn, ngọt thơm.', 32000, (SELECT MIN(id) FROM categories WHERE name = 'Tráng miệng') UNION ALL
+  SELECT 'Dưa hấu tráng miệng', 'Dưa hấu cắt miếng dùng lạnh.', 29000, (SELECT MIN(id) FROM categories WHERE name = 'Tráng miệng')
 ) AS seed_menu
 WHERE NOT EXISTS (
   SELECT 1 FROM menu_items m WHERE m.name = seed_menu.name
