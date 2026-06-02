@@ -11,6 +11,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import API from "../../services/api";
+import { joinRealtimeRoom, subscribeRealtime } from "../../services/socketService";
 
 const STATUS_CONFIG = {
   trong: { label: "Bàn trống", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -80,6 +81,7 @@ export default function TableOrder() {
   const [cartPanelWidth, setCartPanelWidth] = useState(480);
   const [qrCartOpen, setQrCartOpen] = useState(false);
   const [serverItemsList, setServerItemsList] = useState([]);
+  const [isPaidLock, setIsPaidLock] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -201,6 +203,25 @@ export default function TableOrder() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    joinRealtimeRoom("staff");
+    
+    // Lắng nghe sự kiện thanh toán hoàn tất
+    const unsubscribePayment = subscribeRealtime("PAYMENT_COMPLETED", (payload) => {
+      // Nếu bàn này vừa thanh toán xong
+      if (Number(payload.table_id) === Number(resolvedTableId)) {
+        setIsPaidLock(true);
+        // Xóa giỏ hàng nháp lưu trong localStorage
+        localStorage.removeItem(`cart_table_${resolvedTableId}`);
+        setCart([]);
+      }
+    });
+
+    return () => {
+      unsubscribePayment();
+    };
+  }, [resolvedTableId]);
 
   // Tự động lưu giỏ hàng nháp vào localStorage khi thay đổi
   useEffect(() => {
@@ -518,6 +539,11 @@ export default function TableOrder() {
       setSuccess(successMessage);
       alert(successMessage);
     } catch (err) {
+      if (err.response?.status === 409 && (err.response?.data?.message?.includes("thanh toán") || err.response?.data?.message?.includes("đã thanh toán"))) {
+        setIsPaidLock(true);
+        localStorage.removeItem(`cart_table_${resolvedTableId}`);
+        setCart([]);
+      }
       setError(err.response?.data?.message || "Lỗi gửi order!");
       alert("Lỗi: " + (err.response?.data?.message || err.message));
     } finally {
@@ -535,6 +561,25 @@ export default function TableOrder() {
             <div className="mx-auto h-10 w-10 animate-pulse rounded-full bg-emerald-100" />
             <p className="text-sm font-black text-slate-700">Đang tải bàn và thực đơn</p>
           </div>
+      </div>
+    );
+  }
+
+  if (isPaidLock) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#fbfbf8] p-6 text-center">
+        <div className="max-w-md rounded-2xl border border-slate-100 bg-white p-8 shadow-[0_28px_90px_rgba(15,23,42,0.06)]">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <CheckCircle size={48} weight="duotone" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-3">Thanh toán thành công!</h2>
+          <p className="text-sm font-semibold text-slate-500 mb-6 leading-relaxed">
+            Cảm ơn quý khách! Hóa đơn của bàn này đã được thanh toán và hoàn tất thành công.
+          </p>
+          <p className="text-xs font-bold text-emerald-700 bg-emerald-50 rounded-xl px-4 py-3 leading-normal">
+            Bàn hiện đã dọn trống. Vui lòng quét lại mã QR mới tại bàn để tiếp tục sử dụng dịch vụ của nhà hàng.
+          </p>
+        </div>
       </div>
     );
   }

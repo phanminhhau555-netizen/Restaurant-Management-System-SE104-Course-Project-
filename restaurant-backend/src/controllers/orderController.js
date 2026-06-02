@@ -22,7 +22,7 @@ exports.createOrder = async (req, res) => {
 
     const [result] = await db.query(
       `INSERT INTO orders (table_id, account_id, customer_id) VALUES (?, ?, ?)`,
-      [table_id, req.user.id, customer_id || null]
+      [table_id, req.user && req.user.id !== 0 ? req.user.id : null, customer_id || null]
     );
 
     res.status(201).json({ 
@@ -46,6 +46,19 @@ exports.addOrderItem = async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+
+    // Kiểm tra trạng thái hóa đơn/order hiện tại
+    const [order] = await connection.query(
+      'SELECT status FROM orders WHERE id=?', [order_id]
+    );
+    if (order.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: 'Không tìm thấy hóa đơn!' });
+    }
+    if (order[0].status === 'da_thanh_toan' || order[0].status === 'huy') {
+      await connection.rollback();
+      return res.status(409).json({ message: 'Hóa đơn bàn này đã được thanh toán hoặc đã hủy, không thể thêm món mới!' });
+    }
 
     // Lấy giá món ăn
     const [menuItem] = await connection.query(
@@ -164,6 +177,14 @@ exports.updateItemStatus = async (req, res) => {
 // SỬA / HỦY MÓN
 exports.deleteOrderItem = async (req, res) => {
   try {
+    // Kiểm tra xem đơn hàng đã được thanh toán hoặc đã hủy chưa
+    const [order] = await db.query(
+      'SELECT status FROM orders WHERE id=?', [req.params.id]
+    );
+    if (order.length > 0 && (order[0].status === 'da_thanh_toan' || order[0].status === 'huy')) {
+      return res.status(409).json({ message: 'Hóa đơn bàn này đã được thanh toán hoặc đã hủy, không thể thay đổi món!' });
+    }
+
     const [item] = await db.query(
       'SELECT * FROM order_items WHERE id=?', [req.params.itemId]
     );
