@@ -81,12 +81,14 @@ exports.addOrderItem = async (req, res) => {
       });
     }
 
+    const unitPrice = Math.round(Number(menuItem[0].price) || 0);
+
     // Thêm món vào order
     await connection.query(
       `INSERT INTO order_items 
         (order_id, menu_item_id, quantity, price, note, status) 
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [order_id, menu_item_id, allowedQuantity, menuItem[0].price, note || null, status || 'cho']
+      [order_id, menu_item_id, allowedQuantity, unitPrice, note || null, status || 'cho']
     );
 
     // Cập nhật tổng tiền

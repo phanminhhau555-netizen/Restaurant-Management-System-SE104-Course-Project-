@@ -149,7 +149,6 @@ export default function TableOrder() {
                 status: sItem.status
               }],
               note: sItem.note || "",
-              sendToKitchen: true
             });
           }
         });
@@ -359,16 +358,8 @@ export default function TableOrder() {
           c.id === item.id ? { ...c, quantity: Math.min(Number(c.quantity) + 1, maxQuantity ?? Number(c.quantity) + 1) } : c
         );
       }
-      return [...prev, { ...item, quantity: 1, note: "", sendToKitchen: true, serverParts: [] }];
+      return [...prev, { ...item, quantity: 1, note: "", serverParts: [] }];
     });
-  };
-
-  const toggleSendToKitchen = (id) => {
-    setCart((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, sendToKitchen: c.sendToKitchen !== false ? false : true } : c
-      )
-    );
   };
 
   const removeFromCart = (id) => {
@@ -497,16 +488,14 @@ export default function TableOrder() {
           menu_item_id: item.id,
           quantity: item.newQty,
           note: item.note || "",
-          status: item.sendToKitchen !== false ? 'cho' : 'hoan_thanh'
+          status: "cho"
         });
         if (itemRes.data?.inventory_adjusted) {
           adjustedMessages.push(`${item.name}: chỉ thêm được ${itemRes.data.added_quantity}`);
         }
       }
 
-      // Chỉ kích hoạt thông báo cho bếp nếu có ít nhất một món mới chọn gửi bếp
-      const hasKitchenItems = itemsToPost.some(item => item.sendToKitchen !== false);
-      if (hasKitchenItems) {
+      if (itemsToPost.length > 0) {
         await API.post(`/api/orders/${currentOrderId}/send`);
       }
 
@@ -747,19 +736,7 @@ export default function TableOrder() {
                           </p>
                         </div>
 
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <button
-                            type="button"
-                            onClick={() => toggleSendToKitchen(item.id)}
-                            className={`min-h-9 rounded-xl border px-3 text-[11px] font-black ${
-                              item.sendToKitchen !== false
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                : "border-slate-200 bg-white text-slate-500"
-                            }`}
-                          >
-                            {item.sendToKitchen !== false ? "Gửi bếp" : "Không gửi bếp"}
-                          </button>
-
+                        <div className="mt-3 flex items-center justify-end gap-3">
                           <div className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-1">
                             <button
                               type="button"
@@ -934,31 +911,20 @@ export default function TableOrder() {
               <table className="w-full border-collapse text-[11px]">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/50 text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                    <th className="p-1 text-center w-6"></th>
-                    <th className="p-1.5 text-left">Tên món</th>
-                    <th className="p-1.5 text-center w-12">ĐVT</th>
+                    <th className="p-1.5 text-left">Món</th>
+                    <th className="p-1.5 text-center w-14">Đơn vị</th>
                     <th className="p-1.5 text-center w-28">SL</th>
-                    <th className="p-1.5 text-right w-20">Đ giá</th>
-                    <th className="p-1.5 text-right w-20">T tiền</th>
+                    <th className="p-1.5 text-right w-20">Đơn giá</th>
+                    <th className="p-1.5 text-right w-20">Thành tiền</th>
                   </tr>
                 </thead>
                 <tbody>
                   {cart.map((item) => (
                     <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/40 transition-colors">
-                      <td className="p-1 text-center align-middle">
-                        <input
-                          type="checkbox"
-                          checked={item.sendToKitchen !== false}
-                          onChange={() => toggleSendToKitchen(item.id)}
-                          className="h-4 w-4 cursor-pointer rounded border-slate-300 text-emerald-700 focus:ring-emerald-500"
-                          aria-label={`Gửi ${item.name} xuống bếp`}
-                          title="Gửi xuống bếp khi xác nhận"
-                        />
-                      </td>
-                      <td className="p-1.5 text-left font-medium text-slate-800 align-middle">
-                        <div className="space-y-0.5">
-                          <p className="font-semibold leading-tight">{item.name}</p>
-                          {renderStatusBadges(item)}
+                      <td className="p-2 text-left font-medium text-slate-800 align-middle">
+                        <div className="space-y-1.5">
+                          <p className="font-black leading-tight text-slate-900">{item.name}</p>
+                          <div className="flex flex-wrap gap-1">{renderStatusBadges(item)}</div>
                         </div>
                       </td>
                       <td className="p-1.5 text-center text-slate-500 capitalize align-middle">{item.unit || "phần"}</td>

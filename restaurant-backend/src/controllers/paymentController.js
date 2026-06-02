@@ -133,11 +133,12 @@ exports.checkout = async (req, res) => {
     if (items && Array.isArray(items)) {
       await db.query('DELETE FROM order_items WHERE order_id=?', [order_id]);
       for (const item of requestedItems) {
+        const itemPrice = Math.round(Number(item.price) || 0);
         await db.query(
           `INSERT INTO order_items 
             (order_id, menu_item_id, quantity, price, note, status) 
            VALUES (?, ?, ?, ?, ?, ?)`,
-          [order_id, item.menu_item_id, item.quantity, item.price, item.note || null, 'hoan_thanh']
+          [order_id, item.menu_item_id, item.quantity, itemPrice, item.note || null, 'hoan_thanh']
         );
       }
     }
