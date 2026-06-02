@@ -49,7 +49,6 @@ export default function StaffReservationsPage() {
       setTables(tablesRes.data);
       setAreas(areasRes.data);
       setReservations(reservationsRes.data);
-      setActiveArea((current) => current ?? areasRes.data[0]?.id ?? null);
     } catch (err) {
       setError(err.response?.data?.message || "Không tải được dữ liệu đặt bàn.");
     } finally {
@@ -71,7 +70,6 @@ export default function StaffReservationsPage() {
         setTables(tablesRes.data);
         setAreas(areasRes.data);
         setReservations(reservationsRes.data);
-        setActiveArea((current) => current ?? areasRes.data[0]?.id ?? null);
       })
       .catch((err) => {
         if (cancelled) return;
