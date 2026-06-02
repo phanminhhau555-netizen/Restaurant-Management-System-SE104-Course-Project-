@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { CalendarBlank, Clock, MagnifyingGlass, Receipt, User, Users, Money, CreditCard, QrCode } from "@phosphor-icons/react";
+import { MagnifyingGlass, Receipt, User, Money, CreditCard, QrCode } from "@phosphor-icons/react";
 import API from "../../services/api";
 
 const STATUS_CONFIG = {
