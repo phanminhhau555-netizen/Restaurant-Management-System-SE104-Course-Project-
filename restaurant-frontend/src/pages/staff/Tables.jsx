@@ -38,7 +38,6 @@ export default function TablesPage() {
   const [closeReason, setCloseReason] = useState("");
   const [reserveTableData, setReserveTableData] = useState(null);
   const [reserveTime, setReserveTime] = useState("");
-  const [cardSize, setCardSize] = useState(160);
   const [rightPanelWidth, setRightPanelWidth] = useState(240);
   const [selectedQRTable, setSelectedQRTable] = useState(null);
   const [serverIP, setServerIP] = useState("");
@@ -72,7 +71,6 @@ export default function TablesPage() {
       ]);
       setTables(tablesRes.data);
       setAreas(areasRes.data);
-      if (areasRes.data.length > 0) setActiveArea(areasRes.data[0].id);
     } catch (err) {
       console.error(err);
     } finally {
@@ -174,10 +172,16 @@ export default function TablesPage() {
               ))}
             </div>
 
-            {/* Area Tabs & Size Slider */}
+            {/* Area Tabs */}
             <div className="flex items-center gap-4">
               {areas.length > 0 && (
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveArea(null)}
+                    className={`admin-tab ${activeArea === null ? "admin-tab-active" : ""}`}
+                  >
+                    Tất cả
+                  </button>
                   {areas.map((area) => (
                     <button
                       key={area.id}
@@ -187,28 +191,8 @@ export default function TablesPage() {
                       {area.name}
                     </button>
                   ))}
-                  <button
-                    onClick={() => setActiveArea(null)}
-                    className={`admin-tab ${activeArea === null ? "admin-tab-active" : ""}`}
-                  >
-                    Tất cả
-                  </button>
                 </div>
               )}
-
-              <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
-                <span className="text-[11px] font-bold text-slate-400 whitespace-nowrap">
-                  Kích cỡ ô: {cardSize}px
-                </span>
-                <input
-                  type="range"
-                  min="110"
-                  max="240"
-                  value={cardSize}
-                  onChange={(e) => setCardSize(Number(e.target.value))}
-                  className="w-20 accent-emerald-700 cursor-pointer h-1 bg-slate-200 rounded-lg appearance-none"
-                />
-              </div>
             </div>
           </div>
 
@@ -224,7 +208,7 @@ export default function TablesPage() {
           ) : (
             <div 
               className="grid gap-1.5"
-              style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${cardSize}px, 1fr))` }}
+              style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
             >
               {filteredTables.map((table) => {
                 const config = STATUS_CONFIG[table.status] || STATUS_CONFIG.trong;

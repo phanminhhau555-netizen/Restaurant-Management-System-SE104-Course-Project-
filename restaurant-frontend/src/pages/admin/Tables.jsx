@@ -27,7 +27,6 @@ export default function AdminTablesPage() {
 
       setTables(tablesRes.data);
       setAreas(areasRes.data);
-      setActiveArea((current) => current ?? areasRes.data[0]?.id ?? null);
     } catch (err) {
       setError(err.response?.data?.message || "Không tải được sơ đồ bàn.");
     } finally {
@@ -48,7 +47,6 @@ export default function AdminTablesPage() {
         if (cancelled) return;
         setTables(tablesRes.data);
         setAreas(areasRes.data);
-        setActiveArea((current) => current ?? areasRes.data[0]?.id ?? null);
       })
       .catch((err) => {
         if (cancelled) return;

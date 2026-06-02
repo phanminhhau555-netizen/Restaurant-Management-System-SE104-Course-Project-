@@ -120,6 +120,17 @@ export default function TableMap({
 
           {areas.length > 0 ? (
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onAreaChange?.(null)}
+                className={`min-h-10 rounded-xl px-4 text-sm font-black transition-colors ${
+                  activeArea === null
+                    ? "bg-emerald-700 text-white"
+                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Tất cả
+              </button>
               {areas.map((area) => {
                 const isActive = activeArea === area.id;
                 return (
@@ -137,17 +148,6 @@ export default function TableMap({
                   </button>
                 );
               })}
-              <button
-                type="button"
-                onClick={() => onAreaChange?.(null)}
-                className={`min-h-10 rounded-xl px-4 text-sm font-black transition-colors ${
-                  activeArea === null
-                    ? "bg-emerald-700 text-white"
-                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                Tất cả
-              </button>
             </div>
           ) : null}
 
