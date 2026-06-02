@@ -11,6 +11,7 @@ router.post('/reservations', verifyToken, tableController.createReservation);
 router.get('/', verifyToken, tableController.getAllTables);
 router.post('/', verifyToken, isAdmin, tableController.createTable);
 // Bàn
+router.get('/qr/:token', tableController.getTableByToken);
 router.get('/:id', verifyToken, tableController.getTableById);
 router.put('/:id', verifyToken, isAdmin, tableController.updateTable);
 router.delete('/:id', verifyToken, isAdmin, tableController.deleteTable);

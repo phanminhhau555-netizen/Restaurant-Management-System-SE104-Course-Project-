@@ -61,10 +61,11 @@ const renderStatusBadges = (item) => {
 };
 
 export default function TableOrder() {
-  const { tableId } = useParams();
+  const { tableId, token } = useParams();
   const navigate = useNavigate();
-  const isQRMode = new URLSearchParams(window.location.search).get("mode") === "qr" || new URLSearchParams(window.location.search).get("qr") === "true";
+  const isQRMode = new URLSearchParams(window.location.search).get("mode") === "qr" || new URLSearchParams(window.location.search).get("qr") === "true" || !!token;
 
+  const [resolvedTableId, setResolvedTableId] = useState(tableId ? Number(tableId) : null);
   const [table, setTable] = useState(null);
   const [menu, setMenu] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -82,8 +83,17 @@ export default function TableOrder() {
 
   const fetchData = useCallback(async () => {
     try {
+      let activeTableId = resolvedTableId;
+      if (token && !activeTableId) {
+        const tokenRes = await API.get(`/api/tables/qr/${token}`);
+        activeTableId = tokenRes.data.id;
+        setResolvedTableId(activeTableId);
+      }
+
+      if (!activeTableId) return;
+
       const [tableRes, menuRes, categoriesRes, activeOrdersRes] = await Promise.all([
-        API.get(`/api/tables/${tableId}`),
+        API.get(`/api/tables/${activeTableId}`),
         API.get("/api/menu"),
         API.get("/api/menu/categories"),
         API.get("/api/orders/active"),
@@ -95,7 +105,7 @@ export default function TableOrder() {
       setCategories(categoriesRes.data || []);
 
       // 1. Lấy giỏ hàng nháp từ localStorage nếu có
-      const savedCartStr = localStorage.getItem(`cart_table_${tableId}`);
+      const savedCartStr = localStorage.getItem(`cart_table_${activeTableId}`);
       let localCart = savedCartStr ? JSON.parse(savedCartStr) : [];
 
       // Dọn dẹp và gộp giỏ hàng local cũ để tránh trùng lặp
@@ -116,7 +126,7 @@ export default function TableOrder() {
 
       // 2. Tìm order đang hoạt động của bàn này
       const activeOrder = activeOrdersRes.data.find(
-        (o) => o.table_id === Number(tableId)
+        (o) => o.table_id === Number(activeTableId)
       );
 
       if (activeOrder) {
@@ -185,7 +195,7 @@ export default function TableOrder() {
     } finally {
       setLoading(false);
     }
-  }, [tableId]);
+  }, [tableId, token, resolvedTableId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -195,12 +205,12 @@ export default function TableOrder() {
   // Tự động lưu giỏ hàng nháp vào localStorage khi thay đổi
   useEffect(() => {
     if (loading) return;
-    if (tableId && cart.length > 0) {
-      localStorage.setItem(`cart_table_${tableId}`, JSON.stringify(cart));
-    } else if (tableId && cart.length === 0) {
-      localStorage.removeItem(`cart_table_${tableId}`);
+    if (resolvedTableId && cart.length > 0) {
+      localStorage.setItem(`cart_table_${resolvedTableId}`, JSON.stringify(cart));
+    } else if (resolvedTableId && cart.length === 0) {
+      localStorage.removeItem(`cart_table_${resolvedTableId}`);
     }
-  }, [cart, tableId, loading]);
+  }, [cart, resolvedTableId, loading]);
 
   const syncServerDeletions = async (currentOrderId) => {
     // 1. Xóa các món không còn xuất hiện trong giỏ hàng
@@ -471,7 +481,7 @@ export default function TableOrder() {
     try {
       let currentOrderId = orderId;
       if (!currentOrderId) {
-        const orderRes = await API.post("/api/orders", { table_id: Number(tableId) });
+        const orderRes = await API.post("/api/orders", { table_id: Number(resolvedTableId) });
         currentOrderId = orderRes.data.order_id;
         setOrderId(currentOrderId);
       }

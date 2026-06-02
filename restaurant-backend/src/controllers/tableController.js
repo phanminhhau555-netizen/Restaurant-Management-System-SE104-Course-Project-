@@ -42,10 +42,12 @@ exports.getTableById = async (req, res) => {
 // THÊM BÀN
 exports.createTable = async (req, res) => {
   const { name, area_id } = req.body;
+  const { randomUUID } = require('crypto');
+  const qr_token = randomUUID();
   try {
     const [result] = await db.query(
-      'INSERT INTO tables (name, area_id) VALUES (?, ?)',
-      [name, area_id]
+      'INSERT INTO tables (name, area_id, qr_token) VALUES (?, ?, ?)',
+      [name, area_id, qr_token]
     );
     res.status(201).json({ 
       message: 'Thêm bàn thành công!', 
@@ -273,4 +275,21 @@ exports.deleteArea = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   }
 };
+
+// LẤY THÔNG TIN BÀN BẰNG QR TOKEN
+exports.getTableByToken = async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM tables WHERE qr_token = ?',
+      [req.params.token]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy bàn tương ứng với mã QR này!' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi server', error: err.message });
+  }
+};
+
 

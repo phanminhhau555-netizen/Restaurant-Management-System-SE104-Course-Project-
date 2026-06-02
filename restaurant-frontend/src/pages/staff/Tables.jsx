@@ -554,7 +554,7 @@ export default function TablesPage() {
             <div className="mx-auto my-6 flex h-60 w-60 items-center justify-center border border-slate-100 rounded-xl bg-slate-50 p-3 shadow-inner">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
-                  `${qrBaseUrl}/staff/orders/${selectedQRTable.id}?mode=qr`
+                  `${qrBaseUrl}/staff/orders/qr/${selectedQRTable.qr_token}?mode=qr`
                 )}`}
                 alt={`QR code for ${selectedQRTable.name}`}
                 className="h-full w-full object-contain"
@@ -564,7 +564,7 @@ export default function TablesPage() {
             <div className="flex gap-3">
               <a
                 href={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(
-                  `${qrBaseUrl}/staff/orders/${selectedQRTable.id}?mode=qr`
+                  `${qrBaseUrl}/staff/orders/qr/${selectedQRTable.qr_token}?mode=qr`
                 )}`}
                 target="_blank"
                 rel="noreferrer"

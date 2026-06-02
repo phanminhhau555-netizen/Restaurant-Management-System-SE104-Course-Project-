@@ -25,7 +25,7 @@ function PrivateRoute({ children, roles }) {
   const { isAuthenticated, user, defaultPath } = useAuth();
 
   // Bỏ qua đăng nhập tuyệt đối nếu là chế độ QR tự phục vụ
-  const isQR = window.location.search.includes("mode=qr");
+  const isQR = window.location.search.includes("mode=qr") || window.location.pathname.includes("/orders/qr/");
   if (isQR) return children;
 
   if (!isAuthenticated) {
@@ -58,6 +58,7 @@ export default function App() {
         <Route path="/staff/tables" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TablesPage /></Layout></PrivateRoute>} />
         <Route path="/staff/reservations" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><StaffReservationsPage /></Layout></PrivateRoute>} />
         <Route path="/staff/orders/:tableId" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TableOrder /></Layout></PrivateRoute>} />
+        <Route path="/staff/orders/qr/:token" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TableOrder /></Layout></PrivateRoute>} />
         <Route path="/staff/payments/:tableId" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TablePayment /></Layout></PrivateRoute>} />
         <Route path="/staff/tables/:tableId/order" element={<PrivateRoute roles={[ROLES.STAFF]}><StaffOrderRedirect /></PrivateRoute>} />
         <Route path="/staff/customers" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><StaffCustomersPage /></Layout></PrivateRoute>} />
