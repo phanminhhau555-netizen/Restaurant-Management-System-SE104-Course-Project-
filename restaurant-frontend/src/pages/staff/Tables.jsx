@@ -35,7 +35,6 @@ export default function TablesPage() {
   const [activeArea, setActiveArea] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [closeTableData, setCloseTableData] = useState(null);
-  const [closeReason, setCloseReason] = useState("");
   const [reserveTableData, setReserveTableData] = useState(null);
   const [reserveTime, setReserveTime] = useState("");
   const [rightPanelWidth, setRightPanelWidth] = useState(240);
@@ -112,16 +111,8 @@ export default function TablesPage() {
   };
 
   const handleConfirmCloseTable = async () => {
-    if (!closeReason.trim()) {
-      alert("Vui lòng nhập lý do đóng bàn");
-      return;
-    }
-    if (!window.confirm(`Xác nhận: Bạn có chắc chắn muốn đóng bàn ${closeTableData.name} với lý do đã nhập chứ?`)) {
-      return;
-    }
     await handleUpdateTableStatus(closeTableData.id, "trong");
     setCloseTableData(null);
-    setCloseReason("");
   };
 
   const handleConfirmReserveTable = async () => {
@@ -479,20 +470,13 @@ export default function TablesPage() {
               Xác nhận đóng bàn {closeTableData.name}
             </h3>
             <p className="text-xs font-bold text-slate-500 mb-4">
-              Bạn có chắc chắn muốn đóng bàn này không? Vui lòng nhập ghi chú lý do đóng bàn bên dưới.
+              Bạn có chắc chắn muốn đóng bàn này và chuyển trạng thái bàn về trống không?
             </p>
-            <textarea
-              className="w-full h-24 rounded-xl border border-slate-200 p-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/30 mb-4 resize-none"
-              placeholder="Nhập lý do đóng bàn tại đây..."
-              value={closeReason}
-              onChange={(e) => setCloseReason(e.target.value)}
-            />
             <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setCloseTableData(null);
-                  setCloseReason("");
                 }}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 border border-slate-200 transition-colors"
               >
