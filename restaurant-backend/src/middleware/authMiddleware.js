@@ -3,10 +3,6 @@ const db = require('../config/db');
 exports.verifyToken = async (req, res, next) => {
   const token = req.headers['authorization'];
   if (!token) {
-    if (req.headers['x-qr-mode'] === 'true') {
-      req.user = { id: 0, username: 'GUEST_QR', role_id: 2 }; // Giả lập tài khoản khách gọi món qua QR (role Staff)
-      return next();
-    }
     return res.status(403).json({ message: 'Không có token!' });
   }
 

@@ -66,6 +66,33 @@ export default function TableOrder() {
   const { tableId, token } = useParams();
   const navigate = useNavigate();
   const isQRMode = new URLSearchParams(window.location.search).get("mode") === "qr" || new URLSearchParams(window.location.search).get("qr") === "true" || !!token;
+  const getTableRequest = useCallback((activeTableId) => (
+    isQRMode ? API.get(`/api/qr/tables/${token}`) : API.get(`/api/tables/${activeTableId}`)
+  ), [isQRMode, token]);
+  const getMenuRequest = useCallback(() => (
+    API.get(isQRMode ? "/api/qr/menu" : "/api/menu")
+  ), [isQRMode]);
+  const getCategoriesRequest = useCallback(() => (
+    API.get(isQRMode ? "/api/qr/menu/categories" : "/api/menu/categories")
+  ), [isQRMode]);
+  const getActiveOrdersRequest = useCallback(() => (
+    API.get(isQRMode ? `/api/qr/orders/${token}/active` : "/api/orders/active")
+  ), [isQRMode, token]);
+  const getOrderDetailRequest = useCallback((activeOrderId) => (
+    API.get(isQRMode ? `/api/qr/orders/${token}/detail` : `/api/orders/${activeOrderId}`)
+  ), [isQRMode, token]);
+  const createOrderRequest = useCallback((activeTableId) => (
+    isQRMode ? API.post(`/api/qr/orders/${token}`) : API.post("/api/orders", { table_id: Number(activeTableId) })
+  ), [isQRMode, token]);
+  const addOrderItemRequest = useCallback((activeOrderId, payload) => (
+    API.post(isQRMode ? `/api/qr/orders/${token}/items` : `/api/orders/${activeOrderId}/items`, payload)
+  ), [isQRMode, token]);
+  const deleteOrderItemRequest = useCallback((activeOrderId, itemId) => (
+    API.delete(isQRMode ? `/api/qr/orders/${token}/items/${itemId}` : `/api/orders/${activeOrderId}/items/${itemId}`)
+  ), [isQRMode, token]);
+  const sendOrderRequest = useCallback((activeOrderId) => (
+    API.post(isQRMode ? `/api/qr/orders/${token}/send` : `/api/orders/${activeOrderId}/send`)
+  ), [isQRMode, token]);
 
   const [resolvedTableId, setResolvedTableId] = useState(tableId ? Number(tableId) : null);
   const [table, setTable] = useState(null);
@@ -88,7 +115,7 @@ export default function TableOrder() {
     try {
       let activeTableId = resolvedTableId;
       if (token && !activeTableId) {
-        const tokenRes = await API.get(`/api/tables/qr/${token}`);
+        const tokenRes = await API.get(`/api/qr/tables/${token}`);
         activeTableId = tokenRes.data.id;
         setResolvedTableId(activeTableId);
       }
@@ -96,10 +123,10 @@ export default function TableOrder() {
       if (!activeTableId) return;
 
       const [tableRes, menuRes, categoriesRes, activeOrdersRes] = await Promise.all([
-        API.get(`/api/tables/${activeTableId}`),
-        API.get("/api/menu"),
-        API.get("/api/menu/categories"),
-        API.get("/api/orders/active"),
+        getTableRequest(activeTableId),
+        getMenuRequest(),
+        getCategoriesRequest(),
+        getActiveOrdersRequest(),
       ]);
 
       const tableData = tableRes.data;
@@ -135,7 +162,7 @@ export default function TableOrder() {
       if (activeOrder) {
         setOrderId(activeOrder.id);
         // Lấy chi tiết món ăn của order từ server
-        const orderDetailRes = await API.get(`/api/orders/${activeOrder.id}`);
+        const orderDetailRes = await getOrderDetailRequest(activeOrder.id);
         const serverItems = orderDetailRes.data.items || [];
         setServerItemsList(serverItems);
 
@@ -198,7 +225,15 @@ export default function TableOrder() {
     } finally {
       setLoading(false);
     }
-  }, [token, resolvedTableId]);
+  }, [
+    token,
+    resolvedTableId,
+    getTableRequest,
+    getMenuRequest,
+    getCategoriesRequest,
+    getActiveOrdersRequest,
+    getOrderDetailRequest,
+  ]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -239,7 +274,7 @@ export default function TableOrder() {
     for (const serverItem of serverItemsList) {
       const cartItem = cart.find(c => c.id === serverItem.menu_item_id);
       if (!cartItem) {
-        await API.delete(`/api/orders/${currentOrderId}/items/${serverItem.id}`);
+        await deleteOrderItemRequest(currentOrderId, serverItem.id);
       }
     }
     
@@ -251,10 +286,10 @@ export default function TableOrder() {
         // Phân bổ số lượng còn lại vào các serverParts, xóa bớt những phần không cần thiết
         for (const part of cartItem.serverParts) {
           if (remainingToKeep <= 0) {
-            await API.delete(`/api/orders/${currentOrderId}/items/${part.orderItemId}`);
+            await deleteOrderItemRequest(currentOrderId, part.orderItemId);
           } else if (remainingToKeep < part.quantity) {
-            await API.delete(`/api/orders/${currentOrderId}/items/${part.orderItemId}`);
-            await API.post(`/api/orders/${currentOrderId}/items`, {
+            await deleteOrderItemRequest(currentOrderId, part.orderItemId);
+            await addOrderItemRequest(currentOrderId, {
               menu_item_id: cartItem.id,
               quantity: remainingToKeep,
               note: cartItem.note || "",
@@ -503,7 +538,7 @@ export default function TableOrder() {
     try {
       let currentOrderId = orderId;
       if (!currentOrderId) {
-        const orderRes = await API.post("/api/orders", { table_id: Number(resolvedTableId) });
+        const orderRes = await createOrderRequest(resolvedTableId);
         currentOrderId = orderRes.data.order_id;
         setOrderId(currentOrderId);
       }
@@ -516,7 +551,7 @@ export default function TableOrder() {
       // Thêm từng món mới/số lượng tăng thêm vào order
       const adjustedMessages = [];
       for (const item of itemsToPost) {
-        const itemRes = await API.post(`/api/orders/${currentOrderId}/items`, {
+        const itemRes = await addOrderItemRequest(currentOrderId, {
           menu_item_id: item.id,
           quantity: item.newQty,
           note: item.note || "",
@@ -528,7 +563,7 @@ export default function TableOrder() {
       }
 
       if (itemsToPost.length > 0) {
-        await API.post(`/api/orders/${currentOrderId}/send`);
+        await sendOrderRequest(currentOrderId);
       }
 
       // Tải lại toàn bộ dữ liệu mới nhất từ server để đồng bộ chuẩn xác

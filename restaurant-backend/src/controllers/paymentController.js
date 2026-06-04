@@ -212,7 +212,7 @@ exports.checkout = async (req, res) => {
       payment_method
     });
   } catch (err) {
-    connection.rollback();
+    await connection.rollback();
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   } finally {
     connection.release();

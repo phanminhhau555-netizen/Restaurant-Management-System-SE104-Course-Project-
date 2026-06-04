@@ -17,11 +17,6 @@ const API = axios.create({
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.authorization = token;
-  
-  // Tự động thêm header X-QR-Mode nếu URL chứa ?mode=qr hoặc pathname chứa /orders/qr/ để bỏ qua đăng nhập ở backend
-  if (window.location.search.includes('mode=qr') || window.location.pathname.includes('/orders/qr/')) {
-    config.headers['x-qr-mode'] = 'true';
-  }
   return config;
 });
 API.interceptors.response.use(

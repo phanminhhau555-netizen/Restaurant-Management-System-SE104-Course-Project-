@@ -37,6 +37,9 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+const qrRoutes = require('./routes/qrRoutes');
+app.use('/api/qr', qrRoutes);
+
 const menuRoutes = require('./routes/menuRoutes');
 app.use('/api/menu', menuRoutes);
 
