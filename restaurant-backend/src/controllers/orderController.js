@@ -299,19 +299,53 @@ exports.getAllOrders = async (req, res) => {
 // XÓA HOÀN TOÀN HÓA ĐƠN/ORDER VÀ CÁC MÓN ĐI KÈM
 exports.deleteOrder = async (req, res) => {
   const order_id = req.params.id;
+  const connection = await db.getConnection();
+
   try {
-    // Xóa tất cả các món ăn trong order trước
-    await db.query('DELETE FROM order_items WHERE order_id=?', [order_id]);
-    // Xóa order
-    const [result] = await db.query('DELETE FROM orders WHERE id=?', [order_id]);
-    
-    if (result.affectedRows === 0) {
+    await connection.beginTransaction();
+
+    const [orders] = await connection.query(
+      'SELECT id, table_id, status FROM orders WHERE id=? FOR UPDATE',
+      [order_id]
+    );
+
+    if (orders.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ message: 'Không tìm thấy hóa đơn!' });
     }
-    
+
+    const order = orders[0];
+    const shouldReleaseTable = ['dang_goi', 'cho_thanh_toan'].includes(order.status);
+
+    await connection.query('DELETE FROM order_items WHERE order_id=?', [order_id]);
+
+    await connection.query('DELETE FROM orders WHERE id=?', [order_id]);
+
+    if (shouldReleaseTable && order.table_id) {
+      await connection.query(
+        'UPDATE tables SET status="trong" WHERE id=?',
+        [order.table_id]
+      );
+    }
+
+    await connection.commit();
+
+    if (shouldReleaseTable && order.table_id) {
+      const payload = {
+        table_id: order.table_id,
+        status: 'trong',
+      };
+
+      req.io?.to('admin').emit('TABLE_STATUS_UPDATED', payload);
+      req.io?.to('staff').emit('TABLE_STATUS_UPDATED', payload);
+    }
+
     res.json({ message: 'Xóa hóa đơn thành công!' });
   } catch (err) {
+    await connection.rollback();
     res.status(500).json({ message: 'Lỗi server', error: err.message });
+  } finally {
+    connection.release();
   }
 };
 
