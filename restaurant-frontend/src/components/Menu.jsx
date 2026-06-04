@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import Layout from "./Layout";
 import API from "../services/api";
+import { formatMoney } from "../utils/formatters";
 
 const STATUS_COLOR = {
   true: "text-green-500",
@@ -486,9 +487,6 @@ export default function Menu({ permissions = {} }) {
       setError(err.response?.data?.message || "Không xóa được món ăn.");
     }
   };
-
-  const formatMoney = (amount) =>
-    new Intl.NumberFormat("vi-VN").format(amount) + "đ";
 
   const formatAmount = (amount) =>
     new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(

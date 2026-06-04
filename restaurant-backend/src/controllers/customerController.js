@@ -118,24 +118,6 @@ exports.deleteCustomer = async (req, res) => {
   }
 };
 
-// CỘNG ĐIỂM THỦ CÔNG
-exports.addPoints = async (req, res) => {
-  const { points, note } = req.body;
-  try {
-    await db.query(
-      'UPDATE customers SET points = points + ? WHERE id=?',
-      [points, req.params.id]
-    );
-
-    // Cập nhật hạng thành viên
-    await updateMembership(req.params.id);
-
-    res.json({ message: `Đã cộng ${points} điểm thành công!` });
-  } catch (err) {
-    res.status(500).json({ message: 'Lỗi server', error: err.message });
-  }
-};
-
 // ĐỔI ĐIỂM LẤY ƯU ĐÃI
 exports.redeemPoints = async (req, res) => {
   const { points } = req.body;
@@ -169,22 +151,6 @@ exports.redeemPoints = async (req, res) => {
   }
 };
 
-// HÀM CẬP NHẬT HẠNG THÀNH VIÊN (dùng nội bộ)
-async function updateMembership(customer_id) {
-  const [customer] = await db.query(
-    'SELECT points FROM customers WHERE id=?', [customer_id]
-  );
-  const points = customer[0].points;
-  let membership = 'thuong';
-
-  if (points >= 5000) membership = 'vang';
-  else if (points >= 2000) membership = 'bac';
-
-  await db.query(
-    'UPDATE customers SET membership=? WHERE id=?',
-    [membership, customer_id]
-  );
-}
 exports.lookupOrCreate = async (req, res) => {
   const { phone } = req.body;
   if (!phone?.trim()) {
@@ -281,7 +247,6 @@ exports.addPoints = async (req, res) => {
 };
  
 // [SỬA] HÀM NỘI BỘ — sửa ngưỡng bạc từ 2000 → 1000 cho đồng bộ
-// và export để paymentController dùng
 async function updateMembership(customer_id) {
   const [customer] = await db.query(
     'SELECT points FROM customers WHERE id=?',

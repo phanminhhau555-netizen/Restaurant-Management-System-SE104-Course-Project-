@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ChartBar, CurrencyCircleDollar, ForkKnife } from "@phosphor-icons/react";
 import Layout from "../../components/Layout";
 import API from "../../services/api";
+import { formatMoney } from "../../utils/formatters";
 
 const StatCard = ({ label, value, icon: Icon, tone = "emerald" }) => {
   const toneClass = {
@@ -78,9 +79,6 @@ export default function Dashboard() {
 
     fetchData();
   }, []);
-
-  const formatMoney = (amount) =>
-    new Intl.NumberFormat("vi-VN").format(amount) + "đ";
 
   const getStatusColor = (status) => {
     switch (status) {

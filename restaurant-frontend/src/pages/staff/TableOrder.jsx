@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import API from "../../services/api";
 import { joinRealtimeRoom, subscribeRealtime } from "../../services/socketService";
+import { formatMoney } from "../../utils/formatters";
 
 const STATUS_CONFIG = {
   trong: { label: "Bàn trống", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
@@ -550,9 +551,6 @@ export default function TableOrder() {
       setSubmitting(false);
     }
   };
-
-  const formatMoney = (amount) =>
-    new Intl.NumberFormat("vi-VN").format(amount) + "đ";
 
   if (loading) {
     return (

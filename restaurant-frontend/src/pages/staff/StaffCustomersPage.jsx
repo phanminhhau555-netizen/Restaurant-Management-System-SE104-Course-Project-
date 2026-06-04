@@ -6,57 +6,12 @@ import {
   CheckCircle,
   PlusCircle,
   Receipt,
-  Crown,
-  MedalMilitary,
-  Star,
   MinusCircle,
 } from "@phosphor-icons/react";
+import MembershipBadge from "../../components/customer/MembershipBadge";
+import { MEMBERSHIP } from "../../components/customer/membershipConfig";
 import API from "../../services/api";
-
-// ── Hạng thành viên config ────────────────────────────────
-const MEMBERSHIP = {
-  thuong: {
-    label: "Thường",
-    icon: Star,
-    color: "text-slate-500",
-    bg: "bg-slate-50",
-    border: "border-slate-200",
-    badge: "bg-slate-100 text-slate-600",
-    min: 0,
-    next: 1000,
-  },
-  bac: {
-    label: "Bạc",
-    icon: MedalMilitary,
-    color: "text-blue-500",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-    badge: "bg-blue-100 text-blue-700",
-    min: 1000,
-    next: 5000,
-  },
-  vang: {
-    label: "Vàng",
-    icon: Crown,
-    color: "text-amber-500",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-    badge: "bg-amber-100 text-amber-700",
-    min: 5000,
-    next: null,
-  },
-};
-
-function MembershipBadge({ level }) {
-  const cfg = MEMBERSHIP[level] || MEMBERSHIP.thuong;
-  const Icon = cfg.icon;
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black ${cfg.badge}`}>
-      <Icon size={12} weight="fill" />
-      {cfg.label}
-    </span>
-  );
-}
+import { formatDateTime } from "../../utils/formatters";
 
 function PointsBar({ points, level }) {
   const cfg = MEMBERSHIP[level] || MEMBERSHIP.thuong;
@@ -461,15 +416,4 @@ export default function StaffCustomersPage() {
       </div>
     </div>
   );
-}
-
-function formatDateTime(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 }

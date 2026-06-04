@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { MagnifyingGlass, Receipt, User, Money, CreditCard, QrCode } from "@phosphor-icons/react";
 import API from "../../services/api";
+import { formatMoney } from "../../utils/formatters";
 
 const STATUS_CONFIG = {
   dang_goi: { label: "Đang gọi", bg: "bg-blue-50 text-blue-700 border-blue-200" },
@@ -262,9 +263,6 @@ export default function StaffSalesPage() {
       revenue: totalRevenue
     };
   }, [filteredOrders]);
-
-  const formatMoney = (amount) =>
-    new Intl.NumberFormat("vi-VN").format(amount) + "đ";
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);

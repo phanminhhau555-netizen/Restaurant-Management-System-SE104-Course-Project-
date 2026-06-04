@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Crown,
-  MedalMilitary,
-  Star,
   UserCircle,
   UsersThree,
   MagnifyingGlass,
@@ -11,42 +8,10 @@ import {
   X,
 } from "@phosphor-icons/react";
 import Layout from "../../components/Layout";
+import MembershipBadge from "../../components/customer/MembershipBadge";
+import { MEMBERSHIP } from "../../components/customer/membershipConfig";
 import API from "../../services/api";
-
-const MEMBERSHIP = {
-  thuong: {
-    label: "Thường",
-    icon: Star,
-    tone: "bg-slate-100 text-slate-600",
-    border: "border-slate-200 bg-slate-50",
-    color: "text-slate-500",
-  },
-  bac: {
-    label: "Bạc",
-    icon: MedalMilitary,
-    tone: "bg-blue-50 text-blue-700",
-    border: "border-blue-200 bg-blue-50",
-    color: "text-blue-500",
-  },
-  vang: {
-    label: "Vàng",
-    icon: Crown,
-    tone: "bg-amber-50 text-amber-700",
-    border: "border-amber-200 bg-amber-50",
-    color: "text-amber-500",
-  },
-};
-
-function MembershipBadge({ level }) {
-  const cfg = MEMBERSHIP[level] || MEMBERSHIP.thuong;
-  const Icon = cfg.icon;
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black ${cfg.tone}`}>
-      <Icon size={11} weight="fill" />
-      {cfg.label}
-    </span>
-  );
-}
+import { formatDateTime } from "../../utils/formatters";
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState([]);
@@ -181,9 +146,9 @@ export default function AdminCustomersPage() {
         {/* Stats */}
         <section className="grid gap-3 xl:grid-cols-3">
           {[
-            { key: "thuong", label: "Hạng Thường", tone: "bg-slate-100 text-slate-600" },
-            { key: "bac", label: "Hạng Bạc", tone: "bg-blue-50 text-blue-700" },
-            { key: "vang", label: "Hạng Vàng", tone: "bg-amber-50 text-amber-700" },
+            { key: "thuong", label: "Hạng Thường", tone: MEMBERSHIP.thuong.badge },
+            { key: "bac", label: "Hạng Bạc", tone: MEMBERSHIP.bac.badge },
+            { key: "vang", label: "Hạng Vàng", tone: MEMBERSHIP.vang.badge },
           ].map(({ key, label, tone }) => (
             <article key={key} className="admin-panel-pad admin-lift">
               <div className="flex items-center justify-between gap-3">
@@ -308,7 +273,7 @@ export default function AdminCustomersPage() {
             ) : (
               <>
                 {/* Customer info */}
-                <div className={`border-b border-slate-200 p-4 ${MEMBERSHIP[selected.membership]?.border || "bg-slate-50"}`}>
+                <div className={`border-b border-slate-200 p-4 ${MEMBERSHIP[selected.membership]?.border || "border-slate-200"} ${MEMBERSHIP[selected.membership]?.bg || "bg-slate-50"}`}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
                       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm shrink-0">
@@ -401,15 +366,4 @@ export default function AdminCustomersPage() {
       </div>
     </Layout>
   );
-}
-
-function formatDateTime(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("vi-VN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
 }

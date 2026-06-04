@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import Layout from "../../components/Layout";
 import API from "../../services/api";
+import { formatNumber as formatMoney } from "../../utils/formatters";
 
 const PAYMENT_METHOD_META = [
   { id: "tien_mat",     name: "Tiền mặt",     icon: Money,      toggleable: false },
@@ -87,7 +88,6 @@ export default function SettingsPage() {
     }
   };
 
-  const formatMoney = (amount) => new Intl.NumberFormat("vi-VN").format(amount);
   const saveLabel = saveState === "saving" ? "Đang lưu..." : saveState === "saved" ? "Đã lưu" : "Lưu cấu hình";
   const qrPreviewUrl = `https://img.vietqr.io/image/${bankId || "VCB"}-${accountNo || "000000"}-compact2.png?amount=${totalAmount}&addInfo=NHWOW%20PREVIEW&accountName=${encodeURIComponent(accountName || "")}`;
 

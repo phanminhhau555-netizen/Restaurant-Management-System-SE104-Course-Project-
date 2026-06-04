@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import Layout from "../../components/Layout";
 import API from "../../services/api";
+import { formatMoney } from "../../utils/formatters";
 
 const TABS = [
   { key: "day", label: "Hôm nay" },
@@ -97,9 +98,6 @@ export default function ReportsPage() {
       mounted = false;
     };
   }, [tab]);
-
-  const formatMoney = (amount) =>
-    new Intl.NumberFormat("vi-VN").format(amount || 0) + "đ";
 
   const getMaxSold = () =>
     Math.max(...topItems.map((item) => item.tong_so_luong || 0), 1);

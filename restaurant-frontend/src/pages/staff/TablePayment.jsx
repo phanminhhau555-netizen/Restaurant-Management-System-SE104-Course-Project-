@@ -11,6 +11,7 @@ import {
   WarningCircle,
 } from "@phosphor-icons/react";
 import API from "../../services/api";
+import { formatMoney } from "../../utils/formatters";
 
 const PAYMENT_METHODS = {
   tien_mat: "Tiền mặt",
@@ -123,8 +124,6 @@ export default function TablePayment() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
-
-  const formatMoney = (amount) => new Intl.NumberFormat("vi-VN").format(amount || 0) + "đ";
 
   const lookupCustomer = async () => {
     const phone = customerPhone.trim();
