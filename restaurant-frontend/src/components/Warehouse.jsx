@@ -63,7 +63,7 @@ function StockBadge({ ingredient }) {
   return <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">Ổn định</span>;
 }
 
-function StatCard({ label, value, icon: Icon, tone = "emerald" }) {
+function StatCard({ label, value, icon: Icon, tone = "emerald", onClick }) {
   const toneClass = {
     emerald: "bg-emerald-100 text-emerald-700",
     amber: "bg-amber-100 text-amber-700",
@@ -71,8 +71,8 @@ function StatCard({ label, value, icon: Icon, tone = "emerald" }) {
     blue: "bg-blue-100 text-blue-700",
   }[tone];
 
-  return (
-    <article className="admin-panel-pad admin-lift">
+  const content = (
+    <>
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-bold text-slate-500">{label}</p>
@@ -82,7 +82,83 @@ function StatCard({ label, value, icon: Icon, tone = "emerald" }) {
           <Icon size={20} weight="duotone" />
         </span>
       </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="admin-panel-pad admin-lift w-full text-left transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <article className="admin-panel-pad admin-lift">
+      {content}
     </article>
+  );
+}
+
+function AlertStockList({ title, items, tone }) {
+  const toneClass = {
+    amber: {
+      icon: "bg-amber-100 text-amber-700",
+      badge: "bg-amber-50 text-amber-700",
+      empty: "text-amber-700",
+    },
+    red: {
+      icon: "bg-red-100 text-red-700",
+      badge: "bg-red-50 text-red-700",
+      empty: "text-red-700",
+    },
+  }[tone];
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${toneClass.icon}`}>
+            <WarningCircle size={18} weight="duotone" />
+          </span>
+          <h3 className="font-black text-slate-950">{title}</h3>
+        </div>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-black ${toneClass.badge}`}>
+          {items.length}
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <p className={`mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm font-semibold ${toneClass.empty}`}>
+          Không có nguyên liệu trong nhóm này.
+        </p>
+      ) : (
+        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto pr-1">
+          {items.map((ingredient) => (
+            <div
+              key={ingredient.id}
+              className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-slate-950">{ingredient.name}</p>
+                  <p className="mt-0.5 text-xs font-semibold text-slate-500">
+                    Tối thiểu: {formatNumber(ingredient.min_quantity)} {ingredient.unit}
+                  </p>
+                </div>
+                <p className="shrink-0 text-sm font-black tabular-nums text-slate-900">
+                  {formatNumber(ingredient.quantity)} {ingredient.unit}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -100,6 +176,7 @@ export default function Warehouse({ permissions }) {
   const [deletingIngredientId, setDeletingIngredientId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [logOpen, setLogOpen] = useState(false);
+  const [alertStockOpen, setAlertStockOpen] = useState(null);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -153,6 +230,22 @@ export default function Warehouse({ permissions }) {
       healthy: Math.max(ingredients.length - lowStock - outStock, 0),
     };
   }, [ingredients]);
+
+  const lowStockIngredients = useMemo(
+    () => ingredients.filter(
+      (item) => Number(item.quantity) > 0 && Number(item.quantity) <= Number(item.min_quantity),
+    ),
+    [ingredients],
+  );
+
+  const outStockIngredients = useMemo(
+    () => ingredients.filter((item) => Number(item.quantity) <= 0),
+    [ingredients],
+  );
+
+  const activeAlertStock = alertStockOpen === "out"
+    ? { title: "Hết hàng", items: outStockIngredients, tone: "red" }
+    : { title: "Sắp hết", items: lowStockIngredients, tone: "amber" };
 
   const selectedIngredient = useMemo(
     () => ingredients.find((ingredient) => String(ingredient.id) === String(movementForm.ingredient_id)),
@@ -309,8 +402,20 @@ export default function Warehouse({ permissions }) {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard icon={Package} label="Tổng nguyên liệu" value={inventoryStats.total} />
             <StatCard icon={CheckCircle} label="Tồn kho ổn định" value={inventoryStats.healthy} tone="blue" />
-            <StatCard icon={WarningCircle} label="Sắp hết" value={inventoryStats.lowStock} tone="amber" />
-            <StatCard icon={WarningCircle} label="Hết hàng" value={inventoryStats.outStock} tone="red" />
+            <StatCard
+              icon={WarningCircle}
+              label="Sắp hết"
+              value={inventoryStats.lowStock}
+              tone="amber"
+              onClick={() => setAlertStockOpen("low")}
+            />
+            <StatCard
+              icon={WarningCircle}
+              label="Hết hàng"
+              value={inventoryStats.outStock}
+              tone="red"
+              onClick={() => setAlertStockOpen("out")}
+            />
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -688,6 +793,39 @@ export default function Warehouse({ permissions }) {
               ) : null}
             </div>
           </div>
+
+          {alertStockOpen ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4">
+              <section className="w-full max-w-2xl rounded-lg border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.22)]">
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+                      Cảnh báo kho
+                    </p>
+                    <h3 className="mt-1 font-black text-slate-950">
+                      Nguyên liệu {activeAlertStock.title.toLowerCase()}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAlertStockOpen(null)}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+                    aria-label="Đóng danh sách cảnh báo kho"
+                  >
+                    <X size={17} weight="bold" />
+                  </button>
+                </div>
+
+                <div className="p-4">
+                  <AlertStockList
+                    title={activeAlertStock.title}
+                    items={activeAlertStock.items}
+                    tone={activeAlertStock.tone}
+                  />
+                </div>
+              </section>
+            </div>
+          ) : null}
 
           {logOpen ? (
             <div className="fixed inset-0 z-50 flex items-start justify-end bg-slate-950/35 p-4 sm:p-6">
