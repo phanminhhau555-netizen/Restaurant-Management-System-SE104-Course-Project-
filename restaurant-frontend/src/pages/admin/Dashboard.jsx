@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChartBar, CurrencyCircleDollar, ForkKnife, UsersThree } from "@phosphor-icons/react";
+import { ChartBar, CurrencyCircleDollar, ForkKnife } from "@phosphor-icons/react";
 import Layout from "../../components/Layout";
 import API from "../../services/api";
 
@@ -51,7 +51,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     doanh_thu: 0,
     tong_don: 0,
-    tong_mon: 0,
   });
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,17 +108,6 @@ export default function Dashboard() {
             <p className="admin-kicker">Tổng quan</p>
             <h1 className="admin-title">Báo cáo hiệu suất</h1>
           </div>
-          <div className="flex gap-2">
-            {["Ngày", "Tuần", "Tháng"].map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`admin-tab ${item === "Ngày" ? "admin-tab-active" : ""}`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
         </header>
 
       {error ? (
@@ -129,11 +117,10 @@ export default function Dashboard() {
       ) : null}
 
       {/* Stat Cards */}
-      <div className="grid gap-4 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <StatCard icon={CurrencyCircleDollar} label="Doanh thu ngày" value={formatMoney(stats.doanh_thu)} />
         <StatCard icon={ChartBar} label="Tổng đơn hàng" value={stats.tong_don} tone="blue" />
         <StatCard icon={ForkKnife} label="Bàn đang dùng" value={orders.length} tone="amber" />
-        <StatCard icon={UsersThree} label="Tổng khách hàng" value={stats.tong_khach || 0} tone="slate" />
       </div>
       {/* Orders Table */}
       <div className="admin-panel-pad">
