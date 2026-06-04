@@ -247,8 +247,8 @@ exports.addPoints = async (req, res) => {
 };
  
 // [SỬA] HÀM NỘI BỘ — sửa ngưỡng bạc từ 2000 → 1000 cho đồng bộ
-async function updateMembership(customer_id) {
-  const [customer] = await db.query(
+async function updateMembership(customer_id, executor = db) {
+  const [customer] = await executor.query(
     'SELECT points FROM customers WHERE id=?',
     [customer_id]
   );
@@ -257,7 +257,7 @@ async function updateMembership(customer_id) {
   if (points >= 5000) membership = 'vang';
   else if (points >= 1000) membership = 'bac'; // cũ là 2000
  
-  await db.query(
+  await executor.query(
     'UPDATE customers SET membership=? WHERE id=?',
     [membership, customer_id]
   );
@@ -265,20 +265,20 @@ async function updateMembership(customer_id) {
  
 // [MỚI] Dùng nội bộ từ paymentController khi checkout
 // Thay thế đoạn cộng điểm cũ trong paymentController.js
-exports.addPointsFromOrder = async (customer_id, order_id, final_amount) => {
+exports.addPointsFromOrder = async (customer_id, order_id, final_amount, executor = db) => {
   const points = Math.floor(final_amount / 1000); // 1.000đ = 1 điểm
   if (points <= 0) return;
  
-  await db.query(
+  await executor.query(
     'UPDATE customers SET points = points + ? WHERE id=?',
     [points, customer_id]
   );
-  await db.query(
+  await executor.query(
     `INSERT INTO points_transactions (customer_id, order_id, type, points, note)
      VALUES (?, ?, 'cong', ?, ?)`,
     [customer_id, order_id, points, `Thanh toán đơn #${order_id}`]
   );
-  await updateMembership(customer_id);
+  await updateMembership(customer_id, executor);
 };
  
 
