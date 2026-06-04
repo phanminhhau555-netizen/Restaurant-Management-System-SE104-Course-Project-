@@ -53,7 +53,9 @@ export default function StaffSalesPage() {
         if (tpl.bank_id) currentBankId = tpl.bank_id;
         if (tpl.account_no) currentAccountNo = tpl.account_no;
         if (tpl.account_name) currentAccountName = tpl.account_name;
-      } catch (e) {}
+      } catch {
+        // Keep default bank settings when invoice_template is not JSON.
+      }
     }
 
     return {
@@ -88,26 +90,8 @@ export default function StaffSalesPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    fetchOrders();
-    API.get("/api/settings")
-      .then(res => {
-        if (res.data) {
-          setSettings(res.data);
-          if (res.data.payment_methods) {
-            const methods = res.data.payment_methods.split(",").map(s => s.trim());
-            setActivePaymentMethods(methods);
-            if (methods.length > 0 && !methods.includes(checkoutMethod)) {
-              setCheckoutMethod(methods[0]);
-            }
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const fetchOrders = async () => {
-    setLoading(true);
+  const fetchOrders = async ({ showLoading = true } = {}) => {
+    if (showLoading) setLoading(true);
     try {
       const res = await API.get("/api/orders");
       setOrders(res.data || []);
@@ -117,6 +101,43 @@ export default function StaffSalesPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadOrders = async () => {
+      try {
+        const res = await API.get("/api/orders");
+        if (!cancelled) setOrders(res.data || []);
+      } catch (err) {
+        console.error("Lỗi lấy danh sách hóa đơn:", err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadOrders();
+    API.get("/api/settings")
+      .then(res => {
+        if (cancelled) return;
+        if (res.data) {
+          setSettings(res.data);
+          if (res.data.payment_methods) {
+            const methods = res.data.payment_methods.split(",").map(s => s.trim());
+            setActivePaymentMethods(methods);
+            setCheckoutMethod((currentMethod) =>
+              methods.length > 0 && !methods.includes(currentMethod) ? methods[0] : currentMethod
+            );
+          }
+        }
+      })
+      .catch(() => {
+        // Settings are optional for this view.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const fetchOrderDetail = async (orderId) => {
     setLoadingDetail(true);
@@ -180,12 +201,9 @@ export default function StaffSalesPage() {
 
   // Filtered Orders Logic
   const filteredOrders = useMemo(() => {
-    console.log("DEBUG - total orders:", orders.length, "filterDate:", filterDate);
     return orders.filter((order) => {
       const orderDate = new Date(order.created_at);
       const d = orderDate.toISOString().split("T")[0];
-      const isMatch = d === filterDate;
-      console.log(`Order #${order.id} | created_at: ${order.created_at} | converted ISO: ${d} | filterDate: ${filterDate} | Match: ${isMatch}`);
       
       // 1. Ngày tháng năm
       if (filterDate) {

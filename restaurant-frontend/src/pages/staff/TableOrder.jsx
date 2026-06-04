@@ -197,7 +197,7 @@ export default function TableOrder() {
     } finally {
       setLoading(false);
     }
-  }, [tableId, token, resolvedTableId]);
+  }, [token, resolvedTableId]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect

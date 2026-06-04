@@ -160,7 +160,7 @@ export default function StaffCustomersPage() {
     setSaving(true);
     setError("");
     try {
-      const res = await API.put(`/api/customers/${customer.id}`, {
+      await API.put(`/api/customers/${customer.id}`, {
         full_name: editName,
         phone: customer.phone,
         email: editEmail,

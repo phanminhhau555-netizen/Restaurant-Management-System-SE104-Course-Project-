@@ -58,20 +58,39 @@ export default function AdminCustomersPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const fetchCustomers = async () => {
-    setLoading(true);
+  const fetchCustomers = async ({ showLoading = true } = {}) => {
+    if (showLoading) setLoading(true);
+    setError("");
     try {
       const res = await API.get("/api/customers");
       setCustomers(res.data || []);
     } catch {
       setError("Không tải được danh sách khách hàng.");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCustomers();
+    let cancelled = false;
+
+    const loadCustomers = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await API.get("/api/customers");
+        if (!cancelled) setCustomers(res.data || []);
+      } catch {
+        if (!cancelled) setError("Không tải được danh sách khách hàng.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadCustomers();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -125,7 +144,7 @@ export default function AdminCustomersPage() {
       await API.delete(`/api/customers/${customer.id}`);
       setSuccess("Đã xóa khách hàng.");
       if (selected?.id === customer.id) setSelected(null);
-      fetchCustomers();
+      fetchCustomers({ showLoading: false });
     } catch (err) {
       setError(err.response?.data?.message || "Không xóa được khách hàng.");
     }
@@ -162,10 +181,10 @@ export default function AdminCustomersPage() {
         {/* Stats */}
         <section className="grid gap-3 xl:grid-cols-3">
           {[
-            { key: "thuong", label: "Hạng Thường", icon: Star, tone: "bg-slate-100 text-slate-600" },
-            { key: "bac", label: "Hạng Bạc", icon: MedalMilitary, tone: "bg-blue-50 text-blue-700" },
-            { key: "vang", label: "Hạng Vàng", icon: Crown, tone: "bg-amber-50 text-amber-700" },
-          ].map(({ key, label, icon: Icon, tone }) => (
+            { key: "thuong", label: "Hạng Thường", tone: "bg-slate-100 text-slate-600" },
+            { key: "bac", label: "Hạng Bạc", tone: "bg-blue-50 text-blue-700" },
+            { key: "vang", label: "Hạng Vàng", tone: "bg-amber-50 text-amber-700" },
+          ].map(({ key, label, tone }) => (
             <article key={key} className="admin-panel-pad admin-lift">
               <div className="flex items-center justify-between gap-3">
                 <div>

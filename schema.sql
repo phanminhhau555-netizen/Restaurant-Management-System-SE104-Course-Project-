@@ -45,6 +45,7 @@ CREATE TABLE tables (
   area_id INT,
   status ENUM('trong', 'dang_dung', 'da_dat') DEFAULT 'trong',
   reserved_at DATETIME NULL,
+  qr_token VARCHAR(36) NOT NULL UNIQUE,
   FOREIGN KEY (area_id) REFERENCES areas(id)
 );
 

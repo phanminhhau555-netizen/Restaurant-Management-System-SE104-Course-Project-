@@ -42,28 +42,7 @@ export default function TablesPage() {
   const [selectedQRTable, setSelectedQRTable] = useState(null);
   const [serverIP, setServerIP] = useState("");
 
-  useEffect(() => {
-    fetchTables();
-    
-    API.get("/api/settings/server-ip")
-      .then((res) => {
-        if (res.data && res.data.ip) {
-          setServerIP(res.data.ip);
-        }
-      })
-      .catch((err) => console.error("Error fetching server IP:", err));
-
-    // Đóng context menu khi click bất kỳ đâu trên màn hình
-    const closeMenu = () => setContextMenu(null);
-    window.addEventListener("click", closeMenu);
-    return () => window.removeEventListener("click", closeMenu);
-  }, []);
-
-  const qrBaseUrl = serverIP && serverIP !== "127.0.0.1"
-    ? `http://${serverIP}:${window.location.port || "5173"}`
-    : window.location.origin;
-
-  const fetchTables = async () => {
+  async function fetchTables() {
     try {
       const [tablesRes, areasRes] = await Promise.all([
         API.get("/api/tables"),
@@ -76,7 +55,50 @@ export default function TablesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTables = async () => {
+      try {
+        const [tablesRes, areasRes] = await Promise.all([
+          API.get("/api/tables"),
+          API.get("/api/tables/areas"),
+        ]);
+        if (cancelled) return;
+        setTables(tablesRes.data);
+        setAreas(areasRes.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadTables();
+    
+    API.get("/api/settings/server-ip")
+      .then((res) => {
+        if (cancelled) return;
+        if (res.data && res.data.ip) {
+          setServerIP(res.data.ip);
+        }
+      })
+      .catch((err) => console.error("Error fetching server IP:", err));
+
+    // Đóng context menu khi click bất kỳ đâu trên màn hình
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener("click", closeMenu);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("click", closeMenu);
+    };
+  }, []);
+
+  const qrBaseUrl = serverIP && serverIP !== "127.0.0.1"
+    ? `http://${serverIP}:${window.location.port || "5173"}`
+    : window.location.origin;
   const handleUpdateTableStatus = async (tableId, nextStatus, reservedAt = null) => {
     try {
       await API.patch(`/api/tables/${tableId}/status`, { 
