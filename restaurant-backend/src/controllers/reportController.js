@@ -50,7 +50,21 @@ exports.revenueByWeek = async (req, res) => {
       GROUP BY DATE(paid_at)
       ORDER BY ngay ASC
     `);
-    res.json(rows);
+
+    const [total] = await db.query(`
+      SELECT 
+        COUNT(id) as tong_don,
+        SUM(total_amount) as tong_doanh_thu
+      FROM orders
+      WHERE paid_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND status = "da_thanh_toan"
+    `);
+
+    res.json({
+      tong_don: total[0].tong_don || 0,
+      tong_doanh_thu: total[0].tong_doanh_thu || 0,
+      chi_tiet: rows
+    });
   } catch (err) {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   }
