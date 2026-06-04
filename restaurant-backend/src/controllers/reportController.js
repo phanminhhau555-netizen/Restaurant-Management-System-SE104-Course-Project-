@@ -128,8 +128,8 @@ exports.inventoryReport = async (req, res) => {
       SELECT 
         id, name, unit, quantity, min_quantity,
         CASE 
-          WHEN quantity <= min_quantity THEN "sap_het"
           WHEN quantity = 0 THEN "het_hang"
+          WHEN quantity <= min_quantity THEN "sap_het"
           ELSE "con_hang"
         END as trang_thai
       FROM ingredients

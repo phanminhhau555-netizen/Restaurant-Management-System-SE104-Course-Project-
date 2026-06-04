@@ -18,6 +18,7 @@ import API from "../services/api";
 const emptyIngredientForm = {
   name: "",
   unit: "",
+  min_quantity: "",
 };
 
 const emptyMovementForm = {
@@ -208,7 +209,7 @@ export default function Warehouse({ permissions }) {
         name: ingredientForm.name.trim(),
         unit: ingredientForm.unit.trim(),
         quantity: 0,
-        min_quantity: 0,
+        min_quantity: Number(ingredientForm.min_quantity) || 0,
       });
       setIngredientForm(emptyIngredientForm);
       setUnitDropdownOpen(false);
@@ -342,17 +343,19 @@ export default function Warehouse({ permissions }) {
               ) : (
                 <>
                   <div className="hidden max-h-[calc(100vh-230px)] overflow-auto md:block">
-                    <table className="w-full min-w-[560px] table-fixed">
+                    <table className="w-full min-w-[680px] table-fixed">
                       <colgroup>
-                        <col className={permissions.canDeleteIngredient ? "w-[42%]" : "w-[48%]"} />
-                        <col className={permissions.canDeleteIngredient ? "w-[24%]" : "w-[26%]"} />
-                        <col className={permissions.canDeleteIngredient ? "w-[24%]" : "w-[26%]"} />
+                        <col className={permissions.canDeleteIngredient ? "w-[34%]" : "w-[38%]"} />
+                        <col className={permissions.canDeleteIngredient ? "w-[20%]" : "w-[22%]"} />
+                        <col className={permissions.canDeleteIngredient ? "w-[20%]" : "w-[22%]"} />
+                        <col className={permissions.canDeleteIngredient ? "w-[16%]" : "w-[18%]"} />
                         {permissions.canDeleteIngredient ? <col className="w-[10%]" /> : null}
                       </colgroup>
                       <thead>
                         <tr className="sticky top-0 z-10 border-b border-gray-100 bg-white text-xs font-semibold uppercase text-gray-500">
                           <th className="px-4 py-2.5 text-left">Nguyên liệu</th>
                           <th className="px-4 py-2.5 text-left">Tồn kho</th>
+                          <th className="px-4 py-2.5 text-left">Tồn tối thiểu</th>
                           <th className="px-4 py-2.5 text-left">Trạng thái</th>
                           {permissions.canDeleteIngredient ? (
                             <th className="px-4 py-2.5 text-right">Thao tác</th>
@@ -365,6 +368,9 @@ export default function Warehouse({ permissions }) {
                             <td className="truncate px-4 py-2.5 font-semibold text-gray-900">{ingredient.name}</td>
                             <td className="px-4 py-2.5 font-black tabular-nums text-gray-900">
                               {formatNumber(ingredient.quantity)} {ingredient.unit}
+                            </td>
+                            <td className="px-4 py-2.5 font-semibold tabular-nums text-gray-600">
+                              {formatNumber(ingredient.min_quantity)} {ingredient.unit}
                             </td>
                             <td className="px-4 py-2.5">
                               <StockBadge ingredient={ingredient} />
@@ -397,6 +403,9 @@ export default function Warehouse({ permissions }) {
                             <p className="font-semibold text-gray-900">{ingredient.name}</p>
                             <p className="mt-1 text-sm text-gray-500">
                               Tồn: {formatNumber(ingredient.quantity)} {ingredient.unit}
+                            </p>
+                            <p className="mt-0.5 text-xs font-semibold text-gray-400">
+                              Tối thiểu: {formatNumber(ingredient.min_quantity)} {ingredient.unit}
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -643,6 +652,24 @@ export default function Warehouse({ permissions }) {
                         ) : null}
                       </div>
                     </div>
+
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Tồn tối thiểu
+                      <div className="mt-1 flex min-h-10 overflow-hidden rounded-lg border border-gray-200 focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-100">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={ingredientForm.min_quantity}
+                          onChange={(event) => setIngredientForm({ ...ingredientForm, min_quantity: event.target.value })}
+                          placeholder="Ví dụ: 5"
+                          className="min-w-0 flex-1 px-3 text-sm font-normal outline-none"
+                        />
+                        <span className="flex items-center border-l border-gray-200 bg-gray-50 px-3 text-sm font-semibold text-gray-600">
+                          {ingredientForm.unit.trim() || "đơn vị"}
+                        </span>
+                      </div>
+                    </label>
 
                     <button
                       type="submit"
