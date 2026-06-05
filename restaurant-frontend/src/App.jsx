@@ -11,7 +11,6 @@ import ReportsPage from "./pages/admin/Report";
 import TablesPage from "./pages/staff/Tables";
 import TableOrder from "./pages/staff/TableOrder";
 import TablePayment from "./pages/staff/TablePayment";
-import StaffReservationsPage from "./pages/staff/Reservations";
 import AdminTablesPage from "./pages/admin/Tables";
 import SettingsPage from "./pages/admin/Settings";
 import Layout from "./components/Layout";
@@ -56,7 +55,6 @@ export default function App() {
 
         {/* Staff */}
         <Route path="/staff/tables" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TablesPage /></Layout></PrivateRoute>} />
-        <Route path="/staff/reservations" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><StaffReservationsPage /></Layout></PrivateRoute>} />
         <Route path="/staff/orders/:tableId" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TableOrder /></Layout></PrivateRoute>} />
         <Route path="/staff/orders/qr/:token" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TableOrder /></Layout></PrivateRoute>} />
         <Route path="/staff/payments/:tableId" element={<PrivateRoute roles={[ROLES.STAFF]}><Layout><TablePayment /></Layout></PrivateRoute>} />

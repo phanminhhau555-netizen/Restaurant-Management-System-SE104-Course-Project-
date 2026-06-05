@@ -205,25 +205,37 @@ exports.updateStatus = async (req, res) => {
 // ĐẶT BÀN TRƯỚC
 exports.createReservation = async (req, res) => {
   const { table_id, customer_name, phone, arrive_time, num_guests } = req.body;
+ 
+  // Validate fields
+  if (!customer_name?.trim()) {
+    return res.status(400).json({ message: 'Vui lòng nhập tên khách!' });
+  }
+  if (!phone?.trim()) {
+    return res.status(400).json({ message: 'Vui lòng nhập số điện thoại!' });
+  }
+  if (!num_guests || Number(num_guests) < 1) {
+    return res.status(400).json({ message: 'Số khách phải ít nhất 1 người!' });
+  }
+ 
+  // Validate thời gian dùng NOW() của MySQL để tránh lệch timezone
   try {
+    const [[{ nowVN }]] = await db.query('SELECT NOW() as nowVN');
+    if (new Date(arrive_time) <= new Date(nowVN)) {
+      return res.status(400).json({ message: 'Thời gian đặt bàn phải trong tương lai!' });
+    }
+ 
     const [result] = await db.query(
-      `INSERT INTO reservations 
-        (table_id, customer_name, phone, arrive_time, num_guests) 
+      `INSERT INTO reservations (table_id, customer_name, phone, arrive_time, num_guests)
        VALUES (?, ?, ?, ?, ?)`,
-      [table_id, customer_name, phone, arrive_time, num_guests]
+      [table_id, customer_name.trim(), phone.trim(), arrive_time, Number(num_guests)]
     );
-    // Cập nhật trạng thái bàn thành "da_dat"
-    await db.query(
-      'UPDATE tables SET status="da_dat" WHERE id=?', [table_id]
-    );
-    emitTableStatusUpdated(req, {
-      table_id: Number(table_id),
-      status: 'da_dat',
-      reservation_id: result.insertId,
-    });
-    res.status(201).json({ 
-      message: 'Đặt bàn thành công!', 
-      id: result.insertId 
+ 
+    // KHÔNG đổi status bàn ở đây nữa
+    // Job sẽ tự đổi sang da_dat khi còn 1 tiếng trước giờ đến
+ 
+    res.status(201).json({
+      message: 'Đặt bàn thành công!',
+      id: result.insertId
     });
   } catch (err) {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
@@ -293,3 +305,21 @@ exports.getTableByToken = async (req, res) => {
 };
 
 
+exports.deleteReservation = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.query('SELECT * FROM reservations WHERE id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ message: 'Không tìm thấy đặt bàn!' });
+    await db.query('DELETE FROM reservations WHERE id = ?', [id]);
+    if (rows[0].table_id) {
+      const [table] = await db.query('SELECT status FROM tables WHERE id = ?', [rows[0].table_id]);
+      if (table[0]?.status === 'da_dat') {
+        await db.query('UPDATE tables SET status="trong", reserved_at=NULL WHERE id=?', [rows[0].table_id]);
+        emitTableStatusUpdated(req, { table_id: Number(rows[0].table_id), status: 'trong' });
+      }
+    }
+    res.json({ message: 'Đã xóa đặt bàn!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi server', error: err.message });
+  }
+};

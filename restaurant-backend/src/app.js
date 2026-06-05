@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
 const { Server } = require('socket.io');
-
+const { startReservationJob } = require('./jobs/reservationJob');
 dotenv.config();
 
 const app = express();
@@ -61,9 +61,11 @@ app.use('/api/reports', reportRoutes);
 const customerRoutes = require('./routes/customerRoutes');
 app.use('/api/customers', customerRoutes);
 
+
+const settingsRoutes = require('./routes/settingsRoutes');
+app.use('/api/settings', settingsRoutes);
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server chạy tại http://localhost:${PORT}`);
+  startReservationJob(io); // 
 });
-const settingsRoutes = require('./routes/settingsRoutes');
-app.use('/api/settings', settingsRoutes);

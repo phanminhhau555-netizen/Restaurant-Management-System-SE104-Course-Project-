@@ -16,7 +16,7 @@ router.get('/:id', verifyToken, tableController.getTableById);
 router.put('/:id', verifyToken, isAdmin, tableController.updateTable);
 router.delete('/:id', verifyToken, isAdmin, tableController.deleteTable);
 router.patch('/:id/status', verifyToken, tableController.updateStatus);
-
+router.delete('/reservations/:id', verifyToken, tableController.deleteReservation);
 router.delete('/areas/:id', verifyToken, isAdmin, tableController.deleteArea);
 
 module.exports = router;
