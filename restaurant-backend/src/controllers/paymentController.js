@@ -43,64 +43,16 @@ exports.getInvoice = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   }
 };
-
-// ÁP DỤNG KHUYẾN MÃI
-exports.applyPromotion = async (req, res) => {
-  const { code } = req.body;
-  const order_id = req.params.id;
-  try {
-    // Kiểm tra mã khuyến mãi
-    const [promo] = await db.query(`
-      SELECT * FROM promotions 
-      WHERE code=? AND is_active=1 
-      AND valid_from <= CURDATE() 
-      AND valid_to >= CURDATE()
-    `, [code]);
-
-    if (promo.length === 0) {
-      return res.status(404).json({ message: 'Mã khuyến mãi không hợp lệ!' });
-    }
-
-    // Lấy tổng tiền order
-    const [order] = await db.query(
-      'SELECT total_amount FROM orders WHERE id=?', [order_id]
-    );
-
-    const total = order[0].total_amount;
-    let discount = 0;
-
-    if (promo[0].discount_percent) {
-      discount = (total * promo[0].discount_percent) / 100;
-    } else if (promo[0].discount_amount) {
-      discount = promo[0].discount_amount;
-    }
-
-    // Cập nhật order
-    await db.query(
-      `UPDATE orders SET 
-        promotion_id=?, 
-        discount_amount=? 
-       WHERE id=?`,
-      [promo[0].id, discount, order_id]
-    );
-
-    res.json({ 
-      message: 'Áp dụng khuyến mãi thành công!',
-      discount_amount: discount
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Lỗi server', error: err.message });
-  }
-};
-
 // THANH TOÁN
 exports.checkout = async (req, res) => {
-  const { payment_method, customer_id, items } = req.body;
   const order_id = req.params.id;
+  const { payment_method, customer_id, membership_discount_percent, items } = req.body;
   const connection = await db.getConnection();
+ 
   try {
     await connection.beginTransaction();
-    // Lấy thông tin order
+ 
+    // 1. Lấy thông tin order
     const [order] = await connection.query(
       'SELECT * FROM orders WHERE id=? FOR UPDATE', [order_id]
     );
@@ -112,18 +64,19 @@ exports.checkout = async (req, res) => {
       await connection.rollback();
       return res.status(400).json({ message: 'Order đã được thanh toán!' });
     }
-
+ 
+    // 2. Lấy items
     const requestedItems = items && Array.isArray(items)
       ? items
       : (await connection.query(
           'SELECT menu_item_id, quantity FROM order_items WHERE order_id=? AND status != "huy"',
           [order_id]
         ))[0];
-
+ 
+    // 3. Kiểm tra nguyên liệu
     const shortages = await checkOrderItemsAvailability(connection, requestedItems, {
       excludeOrderId: order_id,
     });
-
     if (shortages.length > 0) {
       await connection.rollback();
       const firstShortage = shortages[0];
@@ -133,84 +86,76 @@ exports.checkout = async (req, res) => {
         shortages,
       });
     }
-
-    // Ghi đè lại toàn bộ món ăn thực tế còn lại trong bàn
+ 
+    // 4. Ghi đè món ăn thực tế
     if (items && Array.isArray(items)) {
       await connection.query('DELETE FROM order_items WHERE order_id=?', [order_id]);
       for (const item of requestedItems) {
         const itemPrice = Math.round(Number(item.price) || 0);
         await connection.query(
-          `INSERT INTO order_items 
-            (order_id, menu_item_id, quantity, price, note, status) 
+          `INSERT INTO order_items (order_id, menu_item_id, quantity, price, note, status) 
            VALUES (?, ?, ?, ?, ?, ?)`,
           [order_id, item.menu_item_id, item.quantity, itemPrice, item.note || null, 'hoan_thanh']
         );
       }
     }
-
-    // Tính toán lại tổng tiền dựa trên các món thực tế đã ghi nhận
+ 
+    // 5. Tính tổng tiền
     const [sumRes] = await connection.query(
       'SELECT SUM(price * quantity) AS order_total FROM order_items WHERE order_id=? AND status != "huy"',
       [order_id]
     );
     const total = sumRes[0]?.order_total || 0;
-
-    // Lấy thuế
+ 
+    // 6. Lấy thuế
     const [config] = await connection.query('SELECT tax_rate FROM config LIMIT 1');
     const tax_rate = config.length > 0 ? config[0].tax_rate : 0;
     const tax_amount = (total * tax_rate) / 100;
     const discount = order[0].discount_amount || 0;
-    const final_amount = total + tax_amount - discount;
-
-    // Cập nhật order thành đã thanh toán
+ 
+    // 7. Tính discount membership — sau khi đã có total và tax_amount
+    const membershipDiscount = membership_discount_percent > 0
+      ? Math.round((total + tax_amount) * membership_discount_percent / 100)
+      : 0;
+ 
+    const final_amount = total + tax_amount - discount - membershipDiscount;
+ 
+    // 8. Cập nhật order
     await connection.query(`
       UPDATE orders SET 
         status="da_thanh_toan",
         payment_method=?,
         tax_amount=?,
         total_amount=?,
+        discount_amount=?,
         customer_id=?,
         paid_at=NOW()
       WHERE id=?
-    `, [payment_method, tax_amount, final_amount, customer_id || null, order_id]);
-
-    // Giải phóng bàn
+    `, [payment_method, tax_amount, final_amount, discount + membershipDiscount, customer_id || null, order_id]);
+ 
+    // 9. Giải phóng bàn
     await connection.query(
       'UPDATE tables SET status="trong" WHERE id=?',
       [order[0].table_id]
     );
-
-    // Cộng điểm khách hàng nếu có
+ 
+    // 10. Cộng điểm
     if (customer_id) {
       await addPointsFromOrder(customer_id, Number(order_id), final_amount, connection);
     }
-
-    // Tự động trừ kho nguyên liệu
+ 
+    // 11. Trừ kho
     await deductInventory(order_id, connection);
-
+ 
     await connection.commit();
-
-    const payload = {
-      order_id: Number(order_id),
-      table_id: order[0].table_id,
-      status: 'trong',
-    };
+ 
+    const payload = { order_id: Number(order_id), table_id: order[0].table_id, status: 'trong' };
     req.io?.to('admin').emit('PAYMENT_COMPLETED', payload);
     req.io?.to('staff').emit('PAYMENT_COMPLETED', payload);
-    req.io?.to('admin').emit('TABLE_STATUS_UPDATED', {
-      table_id: order[0].table_id,
-      status: 'trong',
-    });
-    req.io?.to('staff').emit('TABLE_STATUS_UPDATED', {
-      table_id: order[0].table_id,
-      status: 'trong',
-    });
-
-    res.json({ 
-      message: 'Thanh toán thành công!',
-      final_amount,
-      payment_method
-    });
+    req.io?.to('admin').emit('TABLE_STATUS_UPDATED', { table_id: order[0].table_id, status: 'trong' });
+    req.io?.to('staff').emit('TABLE_STATUS_UPDATED', { table_id: order[0].table_id, status: 'trong' });
+ 
+    res.json({ message: 'Thanh toán thành công!', final_amount, payment_method });
   } catch (err) {
     await connection.rollback();
     res.status(500).json({ message: 'Lỗi server', error: err.message });

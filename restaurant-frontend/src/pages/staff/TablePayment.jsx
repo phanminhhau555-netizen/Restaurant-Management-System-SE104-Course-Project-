@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import API from "../../services/api";
 import { formatMoney } from "../../utils/formatters";
-
+const MEMBERSHIP_DISCOUNT = { thuong: 0, bac: 5, vang: 10 };
 const PAYMENT_METHODS = {
   tien_mat: "Tiền mặt",
   chuyen_khoan: "Thẻ tín dụng",
@@ -155,36 +155,41 @@ export default function TablePayment() {
   };
 
   const completePayment = async () => {
-    if (!order || visibleItems.length === 0) return;
-    setSubmitting(true);
-    setError("");
-    try {
-      const checkoutCustomerResult = await getCheckoutCustomer();
-      const checkoutCustomer = checkoutCustomerResult?.customer || null;
-      await API.post(`/api/payment/${order.id}/checkout`, {
-        payment_method: paymentMethod,
-        customer_id: checkoutCustomer?.id || null,
-        items: visibleItems.map((item) => ({
-          menu_item_id: item.menu_item_id,
-          quantity: item.quantity,
-          price: item.price,
-          note: item.note || "",
-        })),
-      });
-      alert(
-        checkoutCustomer
-            ? "Thanh toán thành công. Điểm tích lũy đã được cộng cho khách hàng!"
-            : "Thanh toán hóa đơn thành công!"
-      );
-      navigate("/staff/tables");
-    } catch (err) {
-      setError(err.response?.data?.message || "Lỗi thanh toán.");
-      alert("Lỗi thanh toán: " + (err.response?.data?.message || err.message));
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  if (!order || visibleItems.length === 0) return;
+  setSubmitting(true);
+  setError("");
+  try {
+    const checkoutCustomerResult = await getCheckoutCustomer();
+    const checkoutCustomer = checkoutCustomerResult?.customer || null;
 
+    // Tính discount theo membership
+    const discountPercent = MEMBERSHIP_DISCOUNT[checkoutCustomer?.membership] || 0;
+
+    await API.post(`/api/payment/${order.id}/checkout`, {
+      payment_method: paymentMethod,
+      customer_id: checkoutCustomer?.id || null,
+      membership_discount_percent: discountPercent,
+      items: visibleItems.map((item) => ({
+        menu_item_id: item.menu_item_id,
+        quantity: item.quantity,
+        price: item.price,
+        note: item.note || "",
+      })),
+    });
+
+    alert(
+      checkoutCustomer
+        ? `Thanh toán thành công. ${discountPercent > 0 ? `Giảm ${discountPercent}% hạng ${checkoutCustomer.membership}.` : ""} Điểm tích lũy đã được cộng!`
+        : "Thanh toán hóa đơn thành công!"
+    );
+    navigate("/staff/tables");
+  } catch (err) {
+    setError(err.response?.data?.message || "Lỗi thanh toán.");
+    alert("Lỗi thanh toán: " + (err.response?.data?.message || err.message));
+  } finally {
+    setSubmitting(false);
+  }
+};
   const handleCheckout = () => {
     completePayment();
   };
