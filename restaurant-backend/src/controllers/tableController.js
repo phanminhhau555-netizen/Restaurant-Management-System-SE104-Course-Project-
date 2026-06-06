@@ -161,6 +161,11 @@ exports.updateStatus = async (req, res) => {
 
       // Nếu đóng bàn (chuyển sang trong), kiểm tra và cập nhật trạng thái đơn hàng tương ứng
       if (status === 'trong') {
+        // Hủy reservation đang chờ của bàn này
+        await db.query(
+          'UPDATE reservations SET status = "huy" WHERE table_id = ? AND status = "cho"',
+          [req.params.id]
+        );
         const [activeOrders] = await db.query(
           'SELECT id FROM orders WHERE table_id=? AND status IN ("dang_goi", "cho_thanh_toan")',
           [req.params.id]
