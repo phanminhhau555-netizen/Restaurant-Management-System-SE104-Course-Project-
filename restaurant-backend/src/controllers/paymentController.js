@@ -3,6 +3,12 @@ const { hideMenuItemsWithOutOfStockIngredients } = require('../services/menuAvai
 const { checkOrderItemsAvailability } = require('../services/orderInventoryService');
 const { addPointsFromOrder } = require('./customerController');
 
+const MEMBERSHIP_DISCOUNT_PERCENT = {
+  thuong: 0,
+  bac: 5,
+  vang: 10,
+};
+
 // TÍNH TIỀN & LẬP HÓA ĐƠN
 exports.getInvoice = async (req, res) => {
   const order_id = req.params.id;
@@ -46,7 +52,7 @@ exports.getInvoice = async (req, res) => {
 // THANH TOÁN
 exports.checkout = async (req, res) => {
   const order_id = req.params.id;
-  const { payment_method, customer_id, membership_discount_percent, items } = req.body;
+  const { payment_method, customer_id, items } = req.body;
   const connection = await db.getConnection();
  
   try {
@@ -113,9 +119,23 @@ exports.checkout = async (req, res) => {
     const tax_amount = (total * tax_rate) / 100;
     const discount = order[0].discount_amount || 0;
  
-    // 7. Tính discount membership — sau khi đã có total và tax_amount
-    const membershipDiscount = membership_discount_percent > 0
-      ? Math.round((total + tax_amount) * membership_discount_percent / 100)
+    // 7. Tính discount membership từ DB, không tin phần trăm gửi từ frontend
+    let membership = null;
+    if (customer_id) {
+      const [customers] = await connection.query(
+        'SELECT membership FROM customers WHERE id=? FOR UPDATE',
+        [customer_id]
+      );
+      if (customers.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({ message: 'Không tìm thấy khách hàng!' });
+      }
+      membership = customers[0].membership;
+    }
+
+    const membershipDiscountPercent = MEMBERSHIP_DISCOUNT_PERCENT[membership] || 0;
+    const membershipDiscount = membershipDiscountPercent > 0
+      ? Math.round((total + tax_amount) * membershipDiscountPercent / 100)
       : 0;
  
     const final_amount = total + tax_amount - discount - membershipDiscount;
@@ -155,7 +175,14 @@ exports.checkout = async (req, res) => {
     req.io?.to('admin').emit('TABLE_STATUS_UPDATED', { table_id: order[0].table_id, status: 'trong' });
     req.io?.to('staff').emit('TABLE_STATUS_UPDATED', { table_id: order[0].table_id, status: 'trong' });
  
-    res.json({ message: 'Thanh toán thành công!', final_amount, payment_method });
+    res.json({
+      message: 'Thanh toán thành công!',
+      final_amount,
+      payment_method,
+      membership,
+      membership_discount_percent: membershipDiscountPercent,
+      membership_discount_amount: membershipDiscount,
+    });
   } catch (err) {
     await connection.rollback();
     res.status(500).json({ message: 'Lỗi server', error: err.message });

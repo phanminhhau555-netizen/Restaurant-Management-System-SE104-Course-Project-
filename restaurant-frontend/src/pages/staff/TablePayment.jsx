@@ -13,6 +13,7 @@ import {
 import API from "../../services/api";
 import { formatMoney } from "../../utils/formatters";
 const MEMBERSHIP_DISCOUNT = { thuong: 0, bac: 5, vang: 10 };
+const MEMBERSHIP_LABELS = { thuong: "Thường", bac: "Bạc", vang: "Vàng" };
 const PAYMENT_METHODS = {
   tien_mat: "Tiền mặt",
   chuyen_khoan: "Thẻ tín dụng",
@@ -76,6 +77,12 @@ export default function TablePayment() {
     (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
     0
   );
+  const taxRate = Number(settings?.tax_rate || 0);
+  const taxAmount = (totalAmount * taxRate) / 100;
+  const discountPercent = MEMBERSHIP_DISCOUNT[customer?.membership] || 0;
+  const discountBase = totalAmount + taxAmount;
+  const discountAmount = discountPercent > 0 ? Math.round((discountBase * discountPercent) / 100) : 0;
+  const paymentAmount = Math.max(discountBase - discountAmount, 0);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -162,13 +169,9 @@ export default function TablePayment() {
     const checkoutCustomerResult = await getCheckoutCustomer();
     const checkoutCustomer = checkoutCustomerResult?.customer || null;
 
-    // Tính discount theo membership
-    const discountPercent = MEMBERSHIP_DISCOUNT[checkoutCustomer?.membership] || 0;
-
-    await API.post(`/api/payment/${order.id}/checkout`, {
+    const checkoutRes = await API.post(`/api/payment/${order.id}/checkout`, {
       payment_method: paymentMethod,
       customer_id: checkoutCustomer?.id || null,
-      membership_discount_percent: discountPercent,
       items: visibleItems.map((item) => ({
         menu_item_id: item.menu_item_id,
         quantity: item.quantity,
@@ -179,7 +182,7 @@ export default function TablePayment() {
 
     alert(
       checkoutCustomer
-        ? `Thanh toán thành công. ${discountPercent > 0 ? `Giảm ${discountPercent}% hạng ${checkoutCustomer.membership}.` : ""} Điểm tích lũy đã được cộng!`
+        ? `Thanh toán thành công. ${checkoutRes.data?.membership_discount_percent > 0 ? `Giảm ${checkoutRes.data.membership_discount_percent}% hạng ${MEMBERSHIP_LABELS[checkoutRes.data.membership] || checkoutRes.data.membership}.` : ""} Điểm tích lũy đã được cộng!`
         : "Thanh toán hóa đơn thành công!"
     );
     navigate("/staff/tables");
@@ -293,7 +296,17 @@ export default function TablePayment() {
                     <Receipt size={18} weight="duotone" className="text-slate-400" />
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tổng thanh toán</p>
                   </div>
-                  <p className="mt-1 text-2xl font-black text-emerald-700">{formatMoney(totalAmount)}</p>
+                  <p className="mt-1 text-2xl font-black text-emerald-700">{formatMoney(paymentAmount)}</p>
+                  {taxAmount > 0 && (
+                    <p className="mt-1 text-[11px] font-bold text-slate-500">
+                      Đã gồm {formatMoney(taxAmount)} thuế
+                    </p>
+                  )}
+                  {discountAmount > 0 && (
+                    <p className="mt-1 text-[11px] font-bold text-emerald-700">
+                      Đã giảm {formatMoney(discountAmount)} theo hạng {MEMBERSHIP_LABELS[customer.membership] || customer.membership}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -372,7 +385,7 @@ export default function TablePayment() {
                   <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
                     <div className="mx-auto flex aspect-square w-[min(100%,clamp(150px,27vh,220px))] items-center justify-center overflow-hidden rounded-xl border border-white bg-white p-1 shadow-sm">
                       <img
-                        src={`https://img.vietqr.io/image/${activeBank.bankId}-${activeBank.accountNo}-compact2.png?amount=${totalAmount}&addInfo=NHWOW%20${order.id}&accountName=${encodeURIComponent(activeBank.accountName)}`}
+                        src={`https://img.vietqr.io/image/${activeBank.bankId}-${activeBank.accountNo}-compact2.png?amount=${paymentAmount}&addInfo=NHWOW%20${order.id}&accountName=${encodeURIComponent(activeBank.accountName)}`}
                         alt="VietQR Code"
                         className="h-full w-full object-contain"
                       />
@@ -384,7 +397,7 @@ export default function TablePayment() {
                       </p>
                       <p className="flex items-center justify-between gap-3">
                         <span className="font-bold text-slate-800">Số tiền</span>
-                        <span className="font-black text-emerald-700">{formatMoney(totalAmount)}</span>
+                        <span className="font-black text-emerald-700">{formatMoney(paymentAmount)}</span>
                       </p>
                       <p className="flex items-center justify-between gap-3">
                         <span className="font-bold text-slate-800">Nội dung</span>

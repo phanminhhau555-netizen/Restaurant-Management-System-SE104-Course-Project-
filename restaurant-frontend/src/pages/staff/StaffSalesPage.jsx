@@ -16,6 +16,9 @@ const PAYMENT_METHODS = {
   qr: "QR Pay"
 };
 
+const MEMBERSHIP_DISCOUNT = { thuong: 0, bac: 5, vang: 10 };
+const MEMBERSHIP_LABELS = { thuong: "Thường", bac: "Bạc", vang: "Vàng" };
+
 const BANK_CONFIG = {
   bankId: "VCB",
   accountNo: "1049144528",
@@ -65,6 +68,24 @@ export default function StaffSalesPage() {
       accountName: currentAccountName
     };
   }, [settings]);
+
+  const selectedItemsTotal = useMemo(() => {
+    const items = orderDetail?.items?.filter((item) => item.status !== "huy") || [];
+    if (items.length === 0) return Number(selectedOrder?.total_amount || 0);
+    return items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+      0
+    );
+  }, [orderDetail, selectedOrder]);
+
+  const checkoutTaxRate = Number(settings?.tax_rate || 0);
+  const checkoutTaxAmount = (selectedItemsTotal * checkoutTaxRate) / 100;
+  const checkoutDiscountPercent = MEMBERSHIP_DISCOUNT[checkoutCustomer?.membership] || 0;
+  const checkoutDiscountBase = selectedItemsTotal + checkoutTaxAmount;
+  const checkoutDiscountAmount = checkoutDiscountPercent > 0
+    ? Math.round((checkoutDiscountBase * checkoutDiscountPercent) / 100)
+    : 0;
+  const checkoutPaymentAmount = Math.max(checkoutDiscountBase - checkoutDiscountAmount, 0);
 
   useEffect(() => {
     if (checkoutMethod === "qr" && selectedOrder) {
@@ -661,7 +682,7 @@ export default function StaffSalesPage() {
                     <div className="flex flex-col sm:flex-row items-center gap-4 bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
                       <div className="w-[140px] h-[140px] border border-slate-100 rounded-lg overflow-hidden flex items-center justify-center bg-slate-50">
                         <img
-                          src={`https://img.vietqr.io/image/${activeBank.bankId}-${activeBank.accountNo}-compact2.png?amount=${selectedOrder.total_amount}&addInfo=NHWOW%20${selectedOrder.id}&accountName=${encodeURIComponent(activeBank.accountName)}`}
+                          src={`https://img.vietqr.io/image/${activeBank.bankId}-${activeBank.accountNo}-compact2.png?amount=${checkoutPaymentAmount}&addInfo=NHWOW%20${selectedOrder.id}&accountName=${encodeURIComponent(activeBank.accountName)}`}
                           alt="VietQR Code"
                           className="w-full h-full object-contain"
                         />
@@ -671,7 +692,7 @@ export default function StaffSalesPage() {
                         <p><span className="font-bold text-slate-800">Ngân hàng:</span> {activeBank.bankId}</p>
                         <p><span className="font-bold text-slate-800">Số tài khoản:</span> {activeBank.accountNo}</p>
                         <p><span className="font-bold text-slate-800">Chủ tài khoản:</span> {activeBank.accountName}</p>
-                        <p><span className="font-bold text-slate-800">Số tiền:</span> <span className="font-bold text-emerald-700">{formatMoney(selectedOrder.total_amount)}</span></p>
+                        <p><span className="font-bold text-slate-800">Số tiền:</span> <span className="font-bold text-emerald-700">{formatMoney(checkoutPaymentAmount)}</span></p>
                         <p><span className="font-bold text-slate-800">Nội dung:</span> <span className="font-mono bg-slate-50 px-1.5 py-0.5 border border-slate-200/50 rounded font-bold text-slate-800">NHWOW {selectedOrder.id}</span></p>
                       </div>
                     </div>
@@ -683,13 +704,13 @@ export default function StaffSalesPage() {
                         try {
                           const checkoutCustomerResult = await getCheckoutCustomer();
                           const checkoutCustomer = checkoutCustomerResult?.customer || null;
-                          await API.post(`/api/payment/${selectedOrder.id}/checkout`, {
+                          const checkoutRes = await API.post(`/api/payment/${selectedOrder.id}/checkout`, {
                             payment_method: checkoutMethod,
                             customer_id: checkoutCustomer?.id || null,
                           });
                           alert(
                             checkoutCustomer
-                                ? "Thanh toán thành công. Điểm tích lũy đã được cộng cho khách hàng!"
+                                ? `Thanh toán thành công. ${checkoutRes.data?.membership_discount_percent > 0 ? `Giảm ${checkoutRes.data.membership_discount_percent}% hạng ${MEMBERSHIP_LABELS[checkoutRes.data.membership] || checkoutRes.data.membership}.` : ""} Điểm tích lũy đã được cộng cho khách hàng!`
                                 : "Thanh toán hóa đơn thành công!"
                           );
                           setSelectedOrder(null);
@@ -716,7 +737,14 @@ export default function StaffSalesPage() {
               <div className="flex items-center gap-1.5">
                 <Receipt size={16} className="text-slate-400" />
                 <span className="text-xs font-bold text-slate-500">Tổng thanh toán:</span>
-                <span className="text-base font-black text-emerald-700">{formatMoney(selectedOrder.total_amount || 0)}</span>
+                <span className="text-base font-black text-emerald-700">
+                  {formatMoney(selectedOrder.status === "cho_thanh_toan" ? checkoutPaymentAmount : selectedOrder.total_amount || 0)}
+                </span>
+                {selectedOrder.status === "cho_thanh_toan" && checkoutDiscountAmount > 0 && (
+                  <span className="text-[11px] font-bold text-emerald-700">
+                    Giảm {formatMoney(checkoutDiscountAmount)} theo hạng {MEMBERSHIP_LABELS[checkoutCustomer.membership] || checkoutCustomer.membership}
+                  </span>
+                )}
               </div>
               <div className="flex gap-2">
                 <button
