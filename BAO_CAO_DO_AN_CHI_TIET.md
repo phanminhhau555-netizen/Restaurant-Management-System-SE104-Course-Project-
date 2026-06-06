@@ -695,326 +695,313 @@ Cấu hình gồm:
 
 Nếu bảng `config` chưa có row, backend tự tạo row mặc định.
 
-## 9. Các màn hình frontend
+## 9. Workflow chi tiết theo màn hình và từng nút
+
+Phần này đọc theo hướng demo và bảo vệ đồ án: người dùng vào màn hình nào, bấm nút nào, frontend gọi API nào, backend xử lý gì, dữ liệu/trạng thái thay đổi ra sao.
+
+### 9.0 Luồng dùng chung toàn frontend
+
+**Điều hướng theo role**
+
+| Thành phần | Người dùng thao tác | Frontend xử lý | Backend/DB |
+|---|---|---|---|
+| Route riêng của từng role | Gõ URL hoặc bấm menu | `PrivateRoute` trong `App.jsx` kiểm tra `localStorage.token` và `user.role_id` | Không gọi DB trực tiếp ở bước route |
+| Không có token | Vào trang cần đăng nhập | Lưu URL hiện tại vào `sessionStorage.redirectAfterLogin`, chuyển về `/login` | Không gọi API |
+| Sai role | Ví dụ staff vào `/admin/reports` | `canAccess()` trả false, chuyển về màn hình mặc định của role | Không gọi API |
+| QR mode | Mở `/staff/orders/qr/:token?mode=qr` | Bỏ qua đăng nhập, ẩn Sidebar, dùng API `/api/qr/...` | Backend kiểm tra `tables.qr_token` |
+
+**Sidebar và tài khoản**
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Nút biểu tượng menu ở đầu Sidebar | Chỉ đổi state `isCollapsed`: Sidebar thu gọn/mở rộng, không gọi API. |
+| Các mục Sidebar | `NavLink` chuyển route. Admin thấy Bảng điều khiển, Báo cáo, Bàn, Thực đơn, Khách hàng, Kho hàng, Nhân sự, Cài đặt. Staff thấy Order món, Bán hàng, Khách hàng. Kitchen thấy Order bếp, Thực đơn, Kho hàng. |
+| Khối tài khoản | Bấm để mở/đóng dropdown tài khoản. |
+| Đăng xuất | Xóa `token` và `user` khỏi `localStorage`, điều hướng về `/login`. |
 
 ### 9.1 Login
 
-File: `restaurant-frontend/src/pages/Login.jsx`
-
-Chức năng:
-
-- Nhập username/password.
-- Gọi `/api/auth/login`.
-- Lưu token/user.
-- Điều hướng theo role.
-
-### 9.2 Layout và Sidebar
-
-Files:
-
-- `restaurant-frontend/src/components/Layout.jsx`
-- `restaurant-frontend/src/components/Sidebar.jsx`
-
-Chức năng:
-
-- Sidebar thu gọn/mở rộng.
-- Menu thay đổi theo role.
-- Có dropdown tài khoản và đăng xuất.
-- Nếu route có `mode=qr` hoặc `qr=true`, Layout ẩn sidebar để phù hợp chế độ order QR.
-
-Menu Admin:
-
-- Tổng quan
-- Thực đơn
-- Kho hàng
-- Báo cáo
-- Cài đặt
-- Nhân sự
-- Bàn
-- Khách hàng
-
-Menu Staff:
-
-- Order món
-- Quản lý bán hàng
-- Khách hàng
-
-Menu Kitchen:
-
-- Order bếp
-- Thực đơn
-- Kho hàng
-
-### 9.3 Admin Dashboard
-
-File: `restaurant-frontend/src/pages/admin/Dashboard.jsx`
-
-API dùng:
-
-- `/api/reports/revenue/day`
-- `/api/orders/active`
-
-Chức năng:
-
-- Hiển thị doanh thu ngày.
-- Hiển thị số đơn.
-- Hiển thị order đang hoạt động.
-- Format tiền theo `vi-VN`.
-
-### 9.4 Admin Staff
-
-File: `restaurant-frontend/src/pages/admin/Staff.jsx`
-
-API dùng:
-
-- `GET /api/auth/accounts`
-- `POST /api/auth/register`
-- `DELETE /api/auth/accounts/:id`
-
-Chức năng:
-
-- Xem danh sách tài khoản.
-- Tạo tài khoản staff/bếp.
-- Xóa tài khoản.
-- Thống kê số lượng theo role.
-
-Lưu ý:
-
-- Backend không cho tạo tài khoản admin qua API register.
-- Admin ban đầu tạo bằng script `seedAdmin.js`.
-
-### 9.5 Admin/Menu và Kitchen/Menu
-
-Files:
-
-- `restaurant-frontend/src/pages/admin/Menu.jsx`
-- `restaurant-frontend/src/pages/kitchen/Menu.jsx`
-- Logic chung: `restaurant-frontend/src/components/Menu.jsx`
-
-Admin có quyền:
-
-- Thêm món.
-- Xóa món.
-- Ẩn/hiện món.
-- Quản lý danh mục.
-- Thêm/sửa công thức món.
-
-Kitchen chỉ xem, không được chỉnh:
-
-- Không tạo món.
-- Không xóa món.
-- Không sửa công thức.
-- Không quản lý danh mục.
-
-### 9.6 Admin/Warehouse và Kitchen/Warehouse
-
-Files:
-
-- `restaurant-frontend/src/pages/admin/Warehouse.jsx`
-- `restaurant-frontend/src/pages/kitchen/Warehouse.jsx`
-- Logic chung: `restaurant-frontend/src/components/Warehouse.jsx`
-
-Admin có quyền:
-
-- Xem kho.
-- Xem log.
-- Nhập/xuất kho.
-- Tạo nguyên liệu.
-- Xóa nguyên liệu.
-
-Kitchen có quyền giới hạn:
-
-- Xem kho.
-- Xem log.
-- Nhập/xuất kho.
-- Không tạo/xóa nguyên liệu.
-
-### 9.7 Admin Tables
-
-File: `restaurant-frontend/src/pages/admin/Tables.jsx`
-
-API dùng:
-
-- `/api/tables`
-- `/api/tables/areas`
-
-Chức năng:
-
-- Xem bàn theo khu vực.
-- Thêm bàn.
-- Thêm khu vực.
-- Xóa bàn.
-- Xóa khu vực.
-- Cập nhật trạng thái bàn.
-- Nghe realtime `TABLE_STATUS_UPDATED`, `TABLE_LIST_UPDATED`, `PAYMENT_COMPLETED`.
-
-### 9.8 Staff Tables
-
-File: `restaurant-frontend/src/pages/staff/Tables.jsx`
-
-Chức năng:
-
-- Xem sơ đồ bàn.
-- Lọc theo khu vực.
-- Hiển thị số bàn trống/đang dùng/đã đặt.
-- Chọn bàn để order.
-- Chuyển bàn sang đang dùng.
-- Đặt bàn/chuyển trạng thái đặt.
-- Đóng bàn.
-- Tạo link/QR mode order theo bàn.
-- Có panel danh sách đặt bàn.
-
-Logic chọn bàn:
-
-- Nếu bàn `trong`, staff có thể chuyển sang `dang_dung`.
-- Nếu bàn `dang_dung`, vào màn order.
-- Nếu bàn `da_dat`, staff có thể xử lý đặt bàn hoặc chuyển sang đang dùng khi khách đến.
-
-### 9.9 Staff Reservations
-
-File: `restaurant-frontend/src/pages/staff/Reservations.jsx`
-
-API dùng:
-
-- `/api/tables`
-- `/api/tables/areas`
-- `/api/tables/reservations/all`
-- `/api/tables/reservations`
-
-Chức năng:
-
-- Xem danh sách bàn và đặt bàn.
-- Tạo reservation.
-- Cập nhật trạng thái bàn khi khách đến.
-- Nghe realtime cập nhật bàn.
-
-### 9.10 Staff TableOrder
-
-File: `restaurant-frontend/src/pages/staff/TableOrder.jsx`
-
-Đây là một trong các file nghiệp vụ lớn nhất.
-
-API dùng:
-
-- `GET /api/tables/:tableId`
-- `GET /api/menu`
-- `GET /api/menu/categories`
-- `GET /api/orders/active`
-- `GET /api/orders/:id`
-- `POST /api/orders`
-- `POST /api/orders/:id/items`
-- `POST /api/orders/:id/send`
-- `DELETE /api/orders/:id/items/:itemId`
-
-Chức năng:
-
-- Lấy thông tin bàn.
-- Lấy menu và danh mục.
-- Tìm order đang mở của bàn.
-- Hiển thị menu theo danh mục, tìm kiếm, phân trang.
-- Giỏ hàng theo bàn.
-- Lưu giỏ hàng tạm trong `localStorage` theo key `cart_table_${tableId}`.
-- Hiển thị trạng thái món đã gửi bếp/chưa gửi.
-- Cho phép sửa số lượng, giá, ghi chú.
-- Kiểm tra giới hạn tồn kho ngay trên frontend dựa vào `max_order_quantity` và `ingredient_availability`.
-- Tạo order nếu bàn chưa có order.
-- Thêm món vào order.
-- Gửi món xuống bếp.
-
-Điểm cần hiểu:
-
-- Frontend gom các món cùng `menu_item_id` lại để hiển thị trong cart.
-- `serverParts` dùng để biết phần nào đã được lưu ở backend.
-- Khi giảm/xóa món đã gửi server, frontend gọi API delete item tương ứng.
-- Khi thêm món mới, frontend gọi `POST /api/orders/:id/items`.
-- Sau khi có món cần gửi bếp, frontend gọi `POST /api/orders/:id/send`.
-
-### 9.11 Kitchen Orders
-
-File: `restaurant-frontend/src/pages/kitchen/Orders.jsx`
-
-API dùng:
-
-- `GET /api/orders/kitchen`
-- `PATCH /api/orders/:id/items/:itemId/status`
-
-Chức năng:
-
-- Hiển thị từng món đang chờ bếp hoặc đang nấu.
-- Sắp xếp FIFO theo thời gian order.
-- Cập nhật thời gian chờ mỗi giây.
-- Auto refresh mỗi 15 giây.
-- Nghe realtime:
-  - `NEW_KITCHEN_ORDER`
-  - `ITEM_STATUS_UPDATED`
-- Bếp đổi trạng thái:
-  - `cho` -> `dang_nau`
-  - `dang_nau` -> `hoan_thanh`
-
-### 9.12 Staff TablePayment
-
-File: `restaurant-frontend/src/pages/staff/TablePayment.jsx`
-
-API dùng:
-
-- `/api/tables/:tableId`
-- `/api/orders`
-- `/api/settings`
-- `/api/orders/:id`
-- `/api/payment/:orderId/checkout`
-
-Chức năng:
-
-- Tìm order chưa thanh toán của bàn.
-- Hiển thị món trong order.
-- Tính tổng tiền.
-- Đọc cấu hình phương thức thanh toán từ settings.
-- Hỗ trợ tiền mặt/chuyển khoản/QR.
-- Khi xác nhận, gọi checkout.
-- Checkout xong chuyển về danh sách bàn.
-
-### 9.13 Staff Sales Page
-
-File: `restaurant-frontend/src/pages/staff/StaffSalesPage.jsx`
-
-API dùng:
-
-- `/api/orders`
-- `/api/orders/:id`
-- `/api/payment/:id/checkout`
-- `/api/orders/:id` delete
-- `/api/settings`
-
-Chức năng:
-
-- Quản lý lịch sử bán hàng.
-- Lọc theo ngày, tháng, năm, giờ, trạng thái.
-- Tìm theo mã đơn, tên bàn, người tạo.
-- Xem chi tiết order.
-- Checkout lại order nếu cần.
-- Xóa order.
-- Thống kê doanh thu/số đơn trên tập dữ liệu đã lọc.
-
-### 9.14 Customers
-
-Files:
-
-- Admin: `restaurant-frontend/src/pages/admin/Customers.jsx`
-- Staff: `restaurant-frontend/src/pages/staff/StaffCustomersPage.jsx`
-
-Admin:
-
-- Xem danh sách khách.
-- Tìm kiếm.
-- Xem điểm/hạng.
-- Xem lịch sử điểm.
-- Xóa khách.
-
-Staff:
-
-- Lookup hoặc tạo khách bằng số điện thoại.
-- Cập nhật tên/email.
-- Xem lịch sử điểm.
+| Nút/trường | Workflow |
+|---|---|
+| Tên đăng nhập, Mật khẩu | Người dùng nhập form local state `form.username`, `form.password`. |
+| Nút mắt hiện/ẩn mật khẩu | Đổi state `showPassword`, input chuyển giữa `password` và `text`, không gọi API. |
+| Đăng nhập | Submit form gọi `POST /api/auth/login`. Backend tìm account đang active, so mật khẩu bằng bcrypt, tạo JWT 8 giờ. Frontend lưu `token`, `user` vào `localStorage`, sau đó chuyển về URL đã bị chặn trước đó hoặc route mặc định theo role. |
+| Đăng nhập sai | Backend trả 401, frontend hiện lỗi "Sai tên đăng nhập hoặc mật khẩu!", không lưu token. |
+
+### 9.2 Admin - Dashboard
+
+Màn hình này chủ yếu để xem nhanh, không có nút ghi dữ liệu.
+
+| Phần | Workflow |
+|---|---|
+| Thẻ Doanh thu ngày | Khi mở trang gọi `GET /api/reports/revenue/day`, lấy `tong_doanh_thu`. |
+| Thẻ Tổng đơn hàng | Cùng response doanh thu, lấy `tong_don`. |
+| Thẻ Bàn đang dùng | Gọi `GET /api/orders/active`, đếm order `dang_goi`. |
+| Bảng trạng thái đơn hàng trực tiếp | Hiển thị các order đang gọi, gồm mã đơn, bàn, tổng tiền, thời gian, trạng thái. Không có nút thao tác tại đây. |
+
+### 9.3 Admin - Báo cáo
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Tab Hôm nay | Set `tab = day`, gọi `GET /api/reports/revenue/day`, đồng thời tải `GET /api/reports/top-items?limit=5` và `GET /api/reports/inventory`. |
+| Tab Tuần | Set `tab = week`, gọi `GET /api/reports/revenue/week`, backend gom doanh thu 7 ngày gần nhất. |
+| Tab Tháng | Set `tab = month`, gọi `GET /api/reports/revenue/month`, backend gom theo tháng/năm hiện tại nếu không truyền query. |
+| Khu vực món bán chạy | Backend chỉ tính `order_items.status = "hoan_thanh"` trong các order `da_thanh_toan`. |
+| Cảnh báo kho | Dùng response `GET /api/reports/inventory`, tách `het_hang` và `sap_het`. Chỉ xem, không xử lý nhập kho ở màn hình này. |
+
+### 9.4 Admin - Nhân sự
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Danh sách nhân viên | Mở trang gọi `GET /api/auth/accounts`, chỉ hiển thị tài khoản không phải admin. |
+| Chọn role Staff/Kitchen | Chỉ đổi `form.role_id` ở frontend. Staff là `role_id=2`, Kitchen là `role_id=3`. |
+| Tạo tài khoản | Submit form gọi `POST /api/auth/register`. Backend chặn tạo admin (`role_id=1`), kiểm tra trùng username, hash password, insert vào `accounts`. Frontend reset form và tải lại danh sách. |
+| Nút thùng rác ở từng nhân viên | Hỏi xác nhận, gọi `DELETE /api/auth/accounts/:id`. Backend set `orders.account_id` và `inventory_logs.account_id` về `NULL` rồi xóa account. |
+
+### 9.5 Admin - Bàn và khu vực
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Tab Tất cả/khu vực | Lọc danh sách bàn theo `area_id` ở frontend, không gọi API. |
+| Nút Khu vực | Mở menu nhỏ gồm `+ Thêm khu vực` và `Xóa khu vực này`. |
+| `+ Thêm khu vực` | Mở modal, nhập tên, bấm `Thêm khu vực` gọi `POST /api/tables/areas`. Backend insert `areas`, emit `TABLE_LIST_UPDATED` cho admin/staff. |
+| `Xóa khu vực này` | Chỉ bật khi đang chọn một khu vực. Gọi `DELETE /api/tables/areas/:id`, backend xóa khu vực và emit cập nhật danh sách. |
+| Nút Bàn | Mở modal thêm bàn. |
+| `Thêm bàn` trong modal | Gọi `POST /api/tables` với `name`, `area_id`. Backend tạo `qr_token` bằng UUID, insert `tables`, emit `TABLE_LIST_UPDATED`. |
+| `Hủy` hoặc `x` trong modal | Đóng modal, không gọi API. |
+| Dropdown trạng thái trên từng bàn | Gọi `PATCH /api/tables/:id/status` với `trong`, `dang_dung` hoặc `da_dat`. Backend cập nhật `tables.status`, nếu chuyển về `trong` thì xử lý reservation/order liên quan, rồi emit `TABLE_STATUS_UPDATED`. |
+| Nút QR trên từng bàn | Mở modal mã QR cho bàn, link trỏ tới `/staff/orders/qr/:qr_token?mode=qr`. |
+| `Mở ảnh lớn để in` | Mở ảnh QR size lớn từ dịch vụ QR bên ngoài để in. Không đổi DB. |
+| `Đóng` trong modal QR | Đóng modal, không gọi API. |
+| Nút Xóa bàn | Hỏi xác nhận, gọi `DELETE /api/tables/:id`. Backend chặn nếu bàn còn order `dang_goi/cho_thanh_toan` hoặc reservation `cho`; nếu hợp lệ thì xóa bàn, giải tham chiếu order/reservation cũ, emit `TABLE_LIST_UPDATED`. |
+
+### 9.6 Staff - Sơ đồ bàn, đặt bàn và QR bàn
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Tab Tất cả/khu vực | Lọc bàn theo khu vực ở frontend. |
+| Nhấp 1 lần vào bàn đang dùng | Điều hướng tới `/staff/orders/:tableId` để tiếp tục gọi món. |
+| Nhấp đúp vào bàn trống | Gọi `PATCH /api/tables/:id/status` với `dang_dung`, sau đó điều hướng tới màn hình order của bàn. |
+| Chuột phải vào bàn | Mở context menu theo trạng thái bàn. |
+| `Mã QR Bàn` | Mở modal QR của bàn để khách tự gọi món. |
+| `Mở bàn` | Chỉ hiện khi bàn `trong`. Gọi `PATCH /api/tables/:id/status` thành `dang_dung`, rồi chuyển sang order món. |
+| `Đặt trước` | Mở modal đặt bàn gồm tên khách, SĐT, số khách, thời gian đến. |
+| `Xác nhận` trong đặt trước | Frontend validate SĐT 9-11 số, thời gian tương lai, số khách >= 1; gọi `POST /api/tables/reservations`. Backend insert `reservations` trạng thái `cho`. Bàn chưa đổi trạng thái ngay; `reservationJob` tự chuyển bàn sang `da_dat` khi còn 1 giờ. |
+| `Hủy` trong đặt trước | Đóng modal và reset form, không gọi API. |
+| `Order món` | Chỉ hiện khi bàn `dang_dung`, chuyển tới `/staff/orders/:tableId`. |
+| `Thanh toán` | Chỉ hiện khi bàn `dang_dung`, chuyển tới `/staff/payments/:tableId`. |
+| `Đóng bàn` | Mở modal xác nhận đóng bàn. |
+| `Xác nhận` trong đóng bàn | Gọi `PATCH /api/tables/:id/status` với `trong`. Backend hủy reservation đang chờ của bàn. Nếu order có món `hoan_thanh` thì order chuyển `cho_thanh_toan`; nếu chưa có món ra bàn thì order chuyển `huy`. |
+| `Mở bàn sớm` | Chỉ hiện với bàn `da_dat` và reservation còn trong 1 giờ. Gọi status `dang_dung` rồi vào order. |
+| `Xóa đặt bàn` | Gọi `DELETE /api/tables/reservations/:id`; nếu bàn đang `da_dat`, backend đưa bàn về `trong` và emit realtime. |
+| `Hủy bàn trễ` | Chỉ hiện khi bàn đã đặt trễ hơn 30 phút. Hỏi xác nhận, rồi chuyển bàn về `trong`. |
+| Nút `x` ở danh sách đặt bàn sắp tới | Xóa reservation giống `Xóa đặt bàn`. |
+| Thanh kéo giữa sơ đồ và panel phải | Chỉ đổi độ rộng panel ở frontend, không gọi API. |
+
+### 9.7 Staff/QR - Order món tại bàn
+
+Màn hình `TableOrder.jsx` có hai nhánh:
+
+- Staff đăng nhập: dùng `/api/tables`, `/api/menu`, `/api/orders`.
+- Khách quét QR: dùng `/api/qr/...`, không cần token đăng nhập, backend kiểm tra `qr_token`.
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Khi mở màn hình | Tải thông tin bàn, danh mục, menu đang bán, order đang hoạt động và chi tiết order nếu có. Giỏ nháp được đọc từ `localStorage` theo key `cart_table_<tableId>`. |
+| Tab danh mục | Lọc món theo danh mục ở frontend. |
+| Ô tìm món | Lọc theo tên món. |
+| Nút `+` trên món | Thêm 1 vào giỏ. Frontend kiểm tra `max_order_quantity` và `ingredient_availability`; nếu kho không đủ thì chặn hoặc tự giới hạn số lượng. |
+| Nút `-` trong giỏ | Giảm số lượng. Nếu số lượng còn 1 thì xóa khỏi giỏ. |
+| Ô số lượng trong giỏ | Cho sửa số lượng trực tiếp; khi blur nếu <= 0 thì xóa món khỏi giỏ. |
+| Ô đơn giá trong giỏ | Cho sửa giá áp dụng cho order hiện tại. Không sửa giá gốc trong `menu_items`. |
+| Ghi chú món | Lưu ghi chú vào item local, khi gửi xuống bếp thì lưu vào `order_items.note`. |
+| Nút `Giỏ` ở QR/mobile | Mở panel giỏ hàng để xem/chỉnh số lượng trước khi gửi. |
+| Đóng panel giỏ QR | Đóng panel, giữ nguyên giỏ nháp. |
+| Nút `Order`/gửi món | Hỏi xác nhận. Nếu bàn chưa có order thì gọi `POST /api/orders` hoặc `POST /api/qr/orders/:token`. Sau đó đồng bộ món bị xóa/giảm bằng `DELETE /api/orders/:id/items/:itemId`, thêm phần tăng thêm bằng `POST /api/orders/:id/items`, rồi gọi `POST /api/orders/:id/send`. |
+| Khi gửi bếp thành công | Backend phát event `NEW_KITCHEN_ORDER` tới room `kitchen`. Frontend tải lại order detail, gom các phần món đã gửi theo trạng thái `cho/dang_nau/hoan_thanh`. |
+| Nếu không có thay đổi | Frontend báo "Không có thay đổi nào để gửi bếp!", không gọi thêm API gửi bếp. |
+| Nếu kho thiếu | Backend có thể trả 409 hoặc tự giảm `allowedQuantity`; frontend hiện thông báo món nào bị giới hạn. |
+| Nút quay lại | Chỉ có ở staff mode, điều hướng về `/staff/tables`. QR mode không có Sidebar và không quay về staff. |
+| Khi thanh toán xong ở nơi khác | Nhận realtime `PAYMENT_COMPLETED`, xóa giỏ nháp, khóa màn hình và hiện thông báo bàn đã thanh toán. |
+
+**Điểm cần nhớ khi bảo vệ:** nút gửi bếp không đổi `orders.status`; order vẫn `dang_goi`. Bếp nhìn thấy từng `order_items.status` là `cho` hoặc `dang_nau`.
+
+### 9.8 Kitchen - Order bếp
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Khi mở màn hình | Join Socket.IO room `kitchen`, gọi `GET /api/orders/kitchen`, tự refresh mỗi 15 giây và nghe `NEW_KITCHEN_ORDER`, `ITEM_STATUS_UPDATED`. |
+| Thẻ món | Mỗi thẻ là một `order_items`, sắp FIFO theo `orders.created_at` rồi `order_items.id`. |
+| Nhãn Khẩn cấp | Frontend đánh dấu nếu món chờ từ 15 phút trở lên. |
+| Nút `Nhận` | Chỉ bật khi món đang `cho`. Gọi `PATCH /api/orders/:orderId/items/:itemId/status` với `dang_nau`. Backend update `order_items.status`, emit `ITEM_STATUS_UPDATED` cho kitchen/staff/admin. |
+| Nút `Hoàn tất` | Gọi cùng endpoint với status `hoan_thanh`. Món biến khỏi hàng đợi bếp vì API kitchen chỉ lấy `cho` và `dang_nau`. |
+| Nút `Đã nhận` | Là trạng thái disabled khi món đã `dang_nau`, không gọi API. |
+
+### 9.9 Staff - Thanh toán theo bàn
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Nút mũi tên quay lại | Điều hướng về `/staff/tables`, không đổi dữ liệu. |
+| Khi mở màn hình | Gọi `GET /api/tables/:tableId`, `GET /api/orders`, `GET /api/settings`; tìm order của bàn đang `dang_goi` hoặc `cho_thanh_toan`, rồi gọi `GET /api/orders/:id` để lấy món. |
+| Ô SĐT khách hàng | Nhập SĐT khách để tích điểm. Khi blur hoặc bấm `Kiểm tra`, gọi `POST /api/customers/lookup-existing`. Không tự tạo khách mới ở màn hình thanh toán. |
+| Nút `Kiểm tra` | Nếu tìm thấy khách thì lưu `customer.id`, hiển thị điểm hiện có. Nếu không tìm thấy thì hiện lỗi. |
+| Nút phương thức thanh toán | Chọn một trong các key bật ở settings: `tien_mat`, `chuyen_khoan`, `qr`. Chỉ đổi state frontend. |
+| Chọn `qr` | Hiển thị mã VietQR dựa trên bank config trong `settings.invoice_template`, số tiền là tổng món hiện tại, nội dung `NHWOW <orderId>`. |
+| Nút `Thanh toán` | Gọi `POST /api/payment/:orderId/checkout` với `payment_method`, `customer_id` nếu có, và danh sách món hiện tại. Backend khóa order, kiểm tra tồn kho lần cuối, tính lại tổng tiền + VAT - giảm giá, set order `da_thanh_toan`, lưu `payment_method`, giải phóng bàn về `trong`, cộng điểm khách hàng, trừ kho theo `recipes`, emit `PAYMENT_COMPLETED` và `TABLE_STATUS_UPDATED`. Frontend báo thành công và quay về sơ đồ bàn. |
+
+### 9.10 Staff - Bán hàng/hóa đơn
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Bộ lọc ngày/tháng/năm | Lọc danh sách `orders` ở frontend. Chọn ngày sẽ xóa tháng/năm; chọn tháng sẽ xóa ngày/năm; chọn năm sẽ xóa ngày/tháng. |
+| Bộ lọc giờ | Lọc theo giờ tạo order. |
+| Bộ lọc trạng thái | Lọc `dang_goi`, `cho_thanh_toan`, `da_thanh_toan`, `huy`. |
+| Ô tìm kiếm | Lọc theo mã đơn, tên bàn, tên nhân viên tạo. |
+| `Đặt lại bộ lọc` | Reset về ngày hôm nay, xóa tháng/năm/giờ/trạng thái/từ khóa. |
+| Nút `Xem` | Mở panel/modal chi tiết, gọi `GET /api/orders/:id`, hiển thị món trong order. |
+| Nút `Xóa` trên dòng hóa đơn | Hỏi xác nhận, gọi `DELETE /api/orders/:id`. Backend xóa `order_items`, xóa `orders`; nếu order đang hoạt động thì giải phóng bàn. |
+| Thanh toán trong chi tiết | Chỉ hiện khi order `cho_thanh_toan`. Có ô SĐT khách, nút kiểm tra khách, nút chọn phương thức, QR preview nếu chọn QR, và nút thanh toán gọi `POST /api/payment/:id/checkout`. |
+| Nút `Xóa hóa đơn` trong chi tiết | Gọi `DELETE /api/orders/:id` giống nút xóa ngoài bảng. |
+| Nút đóng chi tiết | Đóng panel, không gọi API. |
+
+### 9.11 Staff - Khách hàng thành viên
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Ô SĐT và nút `Tra cứu` | Submit gọi `POST /api/customers/lookup`. Nếu SĐT đã tồn tại thì trả customer; nếu chưa có thì backend tạo customer mới chỉ có SĐT, frontend bật chế độ chỉnh sửa để bổ sung tên/email. |
+| `Tra cứu mới` | Reset SĐT, customer, lịch sử điểm, lỗi/thành công. |
+| `Chỉnh sửa thông tin` | Bật form tên/email. Không gọi API. |
+| `Hủy chỉnh sửa` | Tắt form chỉnh sửa, không lưu. |
+| `Lưu thông tin` | Gọi `PUT /api/customers/:id` với `full_name`, `phone`, `email`; sau đó lookup lại để refresh customer và tải lịch sử điểm. |
+| Lịch sử tích điểm | Gọi `GET /api/customers/:id/points-history`, hiển thị log cộng/trừ điểm. |
+
+### 9.12 Admin - Khách hàng
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Ô tìm kiếm | Lọc local theo tên, SĐT, email. |
+| Click một dòng khách hàng | Set khách đang chọn và gọi `GET /api/customers/:id/points-history` để hiện panel lịch sử điểm. |
+| Nút `x` ở panel chi tiết | Bỏ chọn khách, đóng panel. |
+| Nút thùng rác | Hỏi xác nhận, gọi `DELETE /api/customers/:id`. Backend chỉ cho admin, xóa customer khỏi DB. |
+| Các thẻ hạng Thường/Bạc/Vàng | Chỉ thống kê local theo `customers.membership`, không gọi API. |
+
+### 9.13 Admin/Kitchen - Thực đơn và công thức
+
+Component `Menu.jsx` dùng chung cho admin và bếp. Quyền khác nhau do `FEATURE_PERMISSIONS`.
+
+| Nút/khu vực | Admin | Kitchen |
+|---|---|---|
+| Khi mở màn hình | Gọi `GET /api/menu`, `/api/menu/categories`, `/api/inventory`, `/api/inventory/recipes` | Giống admin |
+| Tab danh mục | Lọc món local | Lọc món local |
+| Ô tìm kiếm | Lọc theo tên món, mã DF, danh mục | Lọc giống admin |
+| Nút xóa tìm kiếm | Xóa `searchTerm` | Xóa `searchTerm` |
+| Click dòng món | Mở panel xem công thức; đồng thời admin nạp dữ liệu vào form sửa món | Chỉ mở panel xem công thức |
+| `Thêm món mới` | Mở form thêm món | Không có |
+| `Quản lý danh mục` | Mở modal danh mục | Không có |
+| `Ẩn`/`Hiện` trên món | Gọi `PATCH /api/menu/:id/toggle`, backend đảo `is_visible` | Không có |
+| Nút thùng rác trên món | Hỏi xác nhận, gọi `DELETE /api/menu/:id` | Không có |
+| Text `Chỉ xem` | Không hiện nếu admin có nút thao tác | Hiện để nhắc bếp không có quyền sửa/xóa |
+
+**Modal quản lý danh mục của admin**
+
+| Nút | Workflow |
+|---|---|
+| Thêm danh mục | Submit tên danh mục, gọi `POST /api/menu/categories`; backend insert `categories`; frontend refresh category/menu. |
+| Lưu/sửa từng danh mục | Gọi `PUT /api/menu/categories/:id`. |
+| Xóa danh mục | Hỏi xác nhận, gọi `DELETE /api/menu/categories/:id`. Backend chặn nếu danh mục còn món. |
+| Đóng modal | Đóng, không gọi API. |
+
+**Panel/form món ăn**
+
+| Nút/khu vực | Workflow |
+|---|---|
+| `Chỉnh sửa nguyên liệu`/chỉnh công thức | Bật form sửa công thức trong panel món. |
+| `+ Thêm dòng` nguyên liệu | Thêm một dòng chọn nguyên liệu + số lượng dùng cho 1 món. |
+| Nút xóa dòng nguyên liệu | Xóa dòng; nếu còn 1 dòng thì reset dòng rỗng. |
+| `Lưu nguyên liệu` | Gọi `PUT /api/inventory/recipes/:menuItemId` với danh sách recipe hợp lệ. Backend xóa recipe cũ của món rồi insert recipe mới, sau đó kiểm tra ẩn món nếu thiếu kho. |
+| Toggle `Đang bán/Ẩn món` trong form | Chỉ đổi `form.is_visible`, lưu thật khi bấm submit. |
+| `Lưu món ăn` | Nếu thêm mới: gọi `POST /api/menu`, sau đó tạo recipe bằng `POST /api/inventory/recipes`. |
+| `Lưu thay đổi` | Nếu sửa món: gọi `PUT /api/menu/:id`, rồi `PUT /api/inventory/recipes/:id`. |
+| `Hủy`/nút đóng form | Đóng form và reset, không gọi API. |
+
+### 9.14 Admin/Kitchen - Kho nguyên liệu
+
+Component `Warehouse.jsx` dùng chung cho admin và bếp.
+
+| Nút/khu vực | Admin | Kitchen |
+|---|---|---|
+| Khi mở màn hình | Gọi `GET /api/inventory` và `GET /api/inventory/logs` | Giống admin |
+| `Nhật ký kho` | Mở drawer lịch sử nhập/xuất | Mở được |
+| Nút đóng nhật ký | Đóng drawer, không gọi API | Giống admin |
+| Thẻ `Sắp hết` | Mở modal danh sách nguyên liệu còn > 0 và <= tối thiểu | Giống admin |
+| Thẻ `Hết hàng` | Mở modal nguyên liệu <= 0 | Giống admin |
+| Đóng modal cảnh báo | Đóng modal, không gọi API | Giống admin |
+| Segment `Nhập`/`Xuất` | Chọn loại biến động kho | Giống admin |
+| Ô tìm nguyên liệu | Mở dropdown, lọc nguyên liệu, chọn một item để set `ingredient_id` | Giống admin |
+| `Cập nhật tồn kho` | Nếu `Nhập`: gọi `POST /api/inventory/import`; backend cộng tồn, ghi `inventory_logs`, thử hiện lại món đủ nguyên liệu. Nếu `Xuất`: gọi `POST /api/inventory/export`; backend kiểm tra tồn đủ, trừ tồn, ghi log, ẩn món thiếu nguyên liệu. | Giống admin |
+| `Thêm nguyên liệu nhanh` | Có form tên, đơn vị, tồn tối thiểu; submit gọi `POST /api/inventory`, quantity ban đầu bằng 0. | Không có |
+| Dropdown đơn vị | Gợi ý từ đơn vị đã tồn tại; chọn/nhập đơn vị cho nguyên liệu mới. | Không có |
+| Nút thùng rác nguyên liệu | Mở modal xác nhận xóa | Không có |
+| `Xóa` trong modal xóa | Gọi `DELETE /api/inventory/:id`. Backend lưu lại tên/đơn vị trong log cũ, set `inventory_logs.ingredient_id = NULL`, xóa recipe liên quan, rồi xóa nguyên liệu. | Không có |
+
+### 9.15 Admin - Cài đặt
+
+| Nút/khu vực | Workflow |
+|---|---|
+| Khi mở màn hình | Gọi `GET /api/settings`. Nếu chưa có config, backend tự tạo config mặc định. |
+| VAT (%) | Chỉ đổi state `vatRate`; preview hóa đơn cập nhật ngay theo số mẫu. Khi lưu, giới hạn 0-100. |
+| Nút phương thức thanh toán | Toggle trong `enabledMethods`. `tien_mat` và `chuyen_khoan` đang được UI coi như phương thức mặc định; `qr` bật/tắt QR Pay. |
+| Mã ngân hàng, Số tài khoản, Tên chủ tài khoản | Đổi state dùng cho QR preview và lưu vào `invoice_template` dạng JSON. |
+| Tiêu đề hóa đơn, lời chào, thông tin liên hệ | Đổi state và cập nhật preview hóa đơn. |
+| `Lưu cấu hình` | Gọi `PUT /api/settings` với tên quán, VAT, danh sách phương thức, thông tin hóa đơn/QR. Backend update dòng `config.id=1`. |
+| QR preview | Tạo ảnh VietQR từ dữ liệu bank và số tiền mẫu; không lưu riêng ảnh QR. |
+
+### 9.16 Luồng QR khách tự gọi món
+
+| Bước | Workflow |
+|---|---|
+| Staff/Admin mở QR bàn | QR chứa URL `/staff/orders/qr/:qr_token?mode=qr`. |
+| Khách quét QR | `PrivateRoute` bỏ qua đăng nhập do có `mode=qr` hoặc `/orders/qr/`. |
+| Frontend xác thực bàn | Gọi `GET /api/qr/tables/:token`. Backend tìm `tables.qr_token`; token sai trả 403/404. |
+| Khách chọn món | Menu lấy từ `GET /api/qr/menu`; chỉ món visible và còn đủ điều kiện bán. |
+| Khách bấm order | Gọi `POST /api/qr/orders/:token`, `POST /api/qr/orders/:token/items`, rồi `POST /api/qr/orders/:token/send`. Backend tạo order với `account_id=NULL`, bàn chuyển `dang_dung`, bếp nhận realtime. |
+| Staff thanh toán | Khi order được thanh toán ở staff, event `PAYMENT_COMPLETED` làm màn hình QR khóa lại và báo đã thanh toán. |
+
+### 9.17 Các event realtime cần nhớ khi demo
+
+| Event | Ai phát | Ai nghe | Ý nghĩa |
+|---|---|---|---|
+| `TABLE_LIST_UPDATED` | Backend bàn/khu vực | Admin, staff | Có thêm/xóa bàn/khu vực, cần tải lại sơ đồ bàn. |
+| `TABLE_STATUS_UPDATED` | Backend bàn/payment/reservation job | Admin, staff | Trạng thái bàn đổi: trống, đang dùng, đã đặt. |
+| `NEW_KITCHEN_ORDER` | Backend order/QR khi gửi bếp | Kitchen | Bếp tải lại hàng đợi món. |
+| `ITEM_STATUS_UPDATED` | Backend khi bếp đổi trạng thái món | Kitchen, staff, admin | Đồng bộ trạng thái món `cho/dang_nau/hoan_thanh`. |
+| `PAYMENT_COMPLETED` | Backend checkout | Admin, staff | Giải phóng bàn, khóa màn hình QR/order cũ, cập nhật sơ đồ bàn. |
+
+### 9.18 Bảng tóm tắt nút ghi dữ liệu quan trọng
+
+| Nút | API chính | Bảng bị ảnh hưởng |
+|---|---|---|
+| Đăng nhập | `POST /api/auth/login` | Không ghi DB, chỉ đọc `accounts` |
+| Tạo tài khoản | `POST /api/auth/register` | `accounts` |
+| Xóa nhân viên | `DELETE /api/auth/accounts/:id` | `accounts`, `orders`, `inventory_logs` |
+| Thêm khu vực | `POST /api/tables/areas` | `areas` |
+| Thêm bàn | `POST /api/tables` | `tables` |
+| Đổi trạng thái bàn | `PATCH /api/tables/:id/status` | `tables`, có thể `reservations`, `orders` |
+| Đặt trước | `POST /api/tables/reservations` | `reservations` |
+| Xóa đặt bàn | `DELETE /api/tables/reservations/:id` | `reservations`, có thể `tables` |
+| Gửi order | `POST /api/orders`, `POST /api/orders/:id/items`, `POST /api/orders/:id/send` | `orders`, `order_items` |
+| Bếp nhận/hoàn tất món | `PATCH /api/orders/:id/items/:itemId/status` | `order_items` |
+| Thanh toán | `POST /api/payment/:id/checkout` | `orders`, `order_items`, `tables`, `ingredients`, `customers`, `points_transactions` |
+| Xóa hóa đơn | `DELETE /api/orders/:id` | `orders`, `order_items`, có thể `tables` |
+| Thêm/sửa/xóa danh mục | `/api/menu/categories...` | `categories` |
+| Thêm/sửa/xóa/ẩn hiện món | `/api/menu...` | `menu_items`, có thể `recipes` |
+| Sửa công thức | `PUT /api/inventory/recipes/:menuItemId` | `recipes`, có thể `menu_items.is_visible` |
+| Nhập/xuất kho | `POST /api/inventory/import` hoặc `/export` | `ingredients`, `inventory_logs`, có thể `menu_items.is_visible` |
+| Thêm/xóa nguyên liệu | `POST/DELETE /api/inventory` | `ingredients`, `recipes`, `inventory_logs` |
+| Tra cứu/tạo khách | `POST /api/customers/lookup` | `customers` nếu SĐT mới |
+| Lưu thông tin khách | `PUT /api/customers/:id` | `customers` |
+| Xóa khách hàng | `DELETE /api/customers/:id` | `customers` |
+| Lưu cấu hình | `PUT /api/settings` | `config` |
 
 ## 10. Logic nghiệp vụ quan trọng cần thuộc
 
@@ -1718,58 +1705,19 @@ Nhưng `restaurant-frontend/package.json` đang là:
 
 Nếu cần chính xác, nên cập nhật README hoặc khi trình bày nói theo package hiện tại là React 19.
 
-### 16.3 `customerController.js` có định nghĩa trùng hàm
+### 16.3 Các lỗi cũ đã được sửa trong code hiện tại
 
-File `customerController.js` có 2 lần:
+Khi rà lại project hiện tại, một số lỗi từng được ghi trong báo cáo cũ không còn là bug đang tồn tại nữa:
 
-- `exports.addPoints`
-- `updateMembership`
+| Vấn đề cũ | Trạng thái hiện tại |
+|---|---|
+| `customerController.js` từng bị ghi là có trùng `exports.addPoints`/`updateMembership` | Code hiện tại chỉ còn một luồng cộng điểm chính và có hàm `addPointsFromOrder` phục vụ checkout. |
+| `paymentController.js` từng bị ghi là thiếu import `addPointsFromOrder` | Hiện đã có `const { addPointsFromOrder } = require('./customerController');`. |
+| `reportController.inventoryReport` từng xét `sap_het` trước `het_hang` | Hiện CASE đã xét `quantity = 0` trước, nên hàng hết được phân loại đúng. |
 
-Trong Node.js, phần định nghĩa sau sẽ ghi đè export `addPoints` trước đó. Code vẫn chạy theo phiên bản sau, nhưng nên dọn lại để file gọn và tránh nhầm.
+Khi bảo vệ nên nói theo hiện trạng code mới, không nói các lỗi này là bug đang tồn tại.
 
-### 16.4 `paymentController.js` gọi `addPointsFromOrder` nhưng chưa import
-
-Trong `paymentController.js`, checkout gọi:
-
-```js
-await addPointsFromOrder(customer_id, Number(order_id), final_amount);
-```
-
-Nhưng đầu file chưa import hàm này từ `customerController.js`. Nếu chạy checkout với `customer_id`, có thể bị lỗi `addPointsFromOrder is not defined`.
-
-Cách sửa hợp lý:
-
-```js
-const { addPointsFromOrder } = require('./customerController');
-```
-
-hoặc tách logic điểm sang service riêng như `customerPointsService.js` để controller không import chéo nhau.
-
-### 16.5 `reportController.inventoryReport` xét trạng thái hơi lệch thứ tự
-
-Code:
-
-```sql
-CASE 
-  WHEN quantity <= min_quantity THEN "sap_het"
-  WHEN quantity = 0 THEN "het_hang"
-  ELSE "con_hang"
-END
-```
-
-Nếu `quantity = 0` và `min_quantity >= 0`, điều kiện đầu đã đúng nên trạng thái sẽ là `sap_het`, không tới `het_hang`.
-
-Nên đổi thứ tự:
-
-```sql
-CASE 
-  WHEN quantity = 0 THEN "het_hang"
-  WHEN quantity <= min_quantity THEN "sap_het"
-  ELSE "con_hang"
-END
-```
-
-### 16.6 Token gửi header chưa có tiền tố Bearer
+### 16.4 Token gửi header chưa có tiền tố Bearer
 
 Frontend gửi:
 
@@ -1793,7 +1741,7 @@ Nếu bị hỏi, trả lời:
 
 > Hiện tại hệ thống dùng token raw để đơn giản hóa. Có thể nâng cấp theo chuẩn Bearer bằng cách frontend thêm `Bearer` và backend tách token sau khoảng trắng.
 
-### 16.7 Register route public
+### 16.5 Register route public
 
 `POST /api/auth/register` hiện public, nhưng không cho tạo admin. UI tạo nhân viên nằm trong admin page, tuy nhiên nếu biết endpoint vẫn có thể gọi tạo staff/bếp.
 
@@ -1801,7 +1749,7 @@ Cải thiện:
 
 > Nên thêm `verifyToken, isAdmin` cho route register nếu muốn chỉ admin được tạo tài khoản.
 
-### 16.8 Chưa có test tự động
+### 16.6 Chưa có test tự động
 
 `restaurant-backend/package.json` có script test mặc định:
 
@@ -2030,4 +1978,3 @@ Nên đọc theo thứ tự này:
 ## 22. Tóm tắt cực ngắn để nói trong 1 phút
 
 > NhaHangWow là hệ thống quản lý nhà hàng fullstack gồm frontend React và backend Node.js/Express dùng MySQL. Hệ thống có 3 vai trò: admin, nhân viên phục vụ và bếp. Admin quản lý nhân sự, thực đơn, kho, bàn, báo cáo và cài đặt. Nhân viên phục vụ mở bàn, gọi món, gửi bếp và thanh toán. Bếp nhận order realtime bằng Socket.IO và cập nhật trạng thái món. Điểm nổi bật là menu liên kết với kho qua bảng công thức `recipes`, nên hệ thống tính được số phần món còn bán được, tránh bán vượt tồn kho, tự ẩn món khi thiếu nguyên liệu và trừ kho khi thanh toán. Ngoài ra hệ thống có khách hàng, điểm tích lũy, hạng thành viên và báo cáo doanh thu/tồn kho.
-
