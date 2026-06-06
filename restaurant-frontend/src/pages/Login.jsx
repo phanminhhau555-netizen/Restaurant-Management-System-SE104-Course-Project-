@@ -50,10 +50,10 @@ export default function Login() {
               <BowlFood size={42} weight="duotone" />
             </div>
             <h1 className="text-6xl font-semibold leading-[0.95] tracking-normal text-[#fffaf0] drop-shadow-[0_8px_32px_rgba(0,0,0,0.45)] sm:text-7xl lg:text-8xl">
-              VietPho
+              NhaHangWow
             </h1>
             <p className="mt-5 text-xl font-medium text-[#fff7e8]/90 drop-shadow-[0_4px_18px_rgba(0,0,0,0.5)] sm:text-2xl">
-              Best Pho in the world
+              Wow WOW wOw WoW WOw
             </p>
           </section>
 
@@ -131,19 +131,6 @@ export default function Login() {
                 {loading ? "Đang đăng nhập..." : "Đăng nhập"}
               </button>
             </form>
-
-            <div className="mt-8 flex items-center gap-4 text-[#b3261e]">
-              <span className="h-px flex-1 bg-[#dfcfb7]" />
-              <span className="text-base leading-none">★</span>
-              <span className="h-px flex-1 bg-[#dfcfb7]" />
-            </div>
-
-            <p className="mt-6 text-center text-sm text-[#625b51]">
-              Bạn cần hỗ trợ?{" "}
-              <span className="font-semibold text-[#2f6d3c]">
-                Liên hệ quản trị hệ thống
-              </span>
-            </p>
           </section>
         </div>
       </main>
