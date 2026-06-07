@@ -172,6 +172,7 @@ export default function TablePayment() {
     const checkoutRes = await API.post(`/api/payment/${order.id}/checkout`, {
       payment_method: paymentMethod,
       customer_id: checkoutCustomer?.id || null,
+      membership_discount_percent: discountPercent,
       items: visibleItems.map((item) => ({
         menu_item_id: item.menu_item_id,
         quantity: item.quantity,
