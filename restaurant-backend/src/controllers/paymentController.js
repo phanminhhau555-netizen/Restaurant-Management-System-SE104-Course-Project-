@@ -198,6 +198,9 @@ exports.cancelOrder = async (req, res) => {
     const [order] = await db.query(
       'SELECT * FROM orders WHERE id=?', [order_id]
     );
+    if (!order || order.length === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy đơn hàng này!' });
+    }
     if (order[0].status === 'da_thanh_toan') {
       return res.status(400).json({ message: 'Không thể hủy order đã thanh toán!' });
     }

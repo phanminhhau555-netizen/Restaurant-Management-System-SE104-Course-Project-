@@ -150,14 +150,29 @@ exports.sendToKitchen = async (req, res) => {
   }
 };
 
-// BẾP CẬP NHẬT TRẠNG THÁI MÓN
 exports.updateItemStatus = async (req, res) => {
   const { status } = req.body;
+
+  // === FIX: Chặn dữ liệu rác bằng Whitelist trước khi đưa vào DB ===
+  const ALLOWED_STATUSES = ['cho', 'dang_nau', 'hoan_thanh', 'huy'];
+  
+  if (!status || !ALLOWED_STATUSES.includes(status)) {
+    return res.status(400).json({ 
+      message: `Trạng thái không hợp lệ! Chỉ chấp nhận: ${ALLOWED_STATUSES.join(', ')}` 
+    });
+  }
+
   try {
-    await db.query(
+    // Thực hiện update trạng thái món
+    const [result] = await db.query(
       'UPDATE order_items SET status=? WHERE id=?',
       [status, req.params.itemId]
     );
+
+    // Kiểm tra xem itemId truyền lên có tồn tại trong DB thật không
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy món ăn này!' });
+    }
 
     const payload = {
       order_id: Number(req.params.id),
@@ -173,7 +188,6 @@ exports.updateItemStatus = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: err.message });
   }
 };
-
 // SỬA / HỦY MÓN
 exports.deleteOrderItem = async (req, res) => {
   try {
@@ -269,17 +283,17 @@ exports.getKitchenOrders = async (req, res) => {
   }
 };
 
-// HÀM TÍNH TỔNG TIỀN (dùng nội bộ)
-async function updateOrderTotal(order_id, connection = db) {
+async function updateOrderTotal(order_id, customConnection = null) {
+  const connection = customConnection || db;
+
   await connection.query(`
-    UPDATE orders SET total_amount = (
+    UPDATE orders SET total_amount = COALESCE((
       SELECT SUM(price * quantity) 
       FROM order_items 
       WHERE order_id = ? AND status != "huy"
-    ) WHERE id = ?
+    ), 0) WHERE id = ?
   `, [order_id, order_id]);
 }
-
 // LẤY TẤT CẢ ORDER (LỊCH SỬ BÁN HÀNG)
 exports.getAllOrders = async (req, res) => {
   try {
