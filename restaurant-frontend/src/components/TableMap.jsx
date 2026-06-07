@@ -242,7 +242,6 @@ export default function TableMap({
                         >
                           <option value="trong">Bàn trống</option>
                           <option value="dang_dung">Có khách</option>
-                          <option value="da_dat">Đã đặt</option>
                         </select>
                         <div className="grid grid-cols-2 gap-2">
                           <button
