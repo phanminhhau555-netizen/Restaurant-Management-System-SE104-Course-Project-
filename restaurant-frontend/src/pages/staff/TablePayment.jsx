@@ -32,6 +32,122 @@ const methodIcons = {
   qr: QrCode,
 };
 
+const printReceipt = (orderId, table, cart, settings, finalAmount) => {
+  const printWindow = window.open("", "_blank", "width=600,height=800");
+  if (!printWindow) {
+    alert("Vui lòng bật quyền hiển thị cửa sổ bật lên (popup) trên trình duyệt để tự động in hóa đơn.");
+    return;
+  }
+
+  const tenQuan = settings?.ten_quan || "";
+  let contact = "";
+  let footer = "";
+
+  if (settings?.invoice_template) {
+    try {
+      const tpl = JSON.parse(settings.invoice_template);
+      if (tpl.contact) contact = tpl.contact;
+      if (tpl.footer) footer = tpl.footer;
+    } catch (e) {}
+  }
+
+  const taxRate = settings?.tax_rate != null ? Number(settings.tax_rate) : 0;
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const taxAmount = Math.round((subtotal * taxRate) / 100);
+  const total = finalAmount || (subtotal + taxAmount);
+
+  const itemsHtml = cart.map(item => `
+    <tr>
+      <td style="padding: 4px 0; font-family: monospace;">${item.name} x${item.quantity}</td>
+      <td style="padding: 4px 0; text-align: right; font-family: monospace;">${new Intl.NumberFormat("vi-VN").format(item.price * item.quantity)}đ</td>
+    </tr>
+  `).join("");
+
+  const htmlContent = `
+    <html>
+      <head>
+        <title>Hóa đơn #${orderId}</title>
+        <style>
+          @page { size: 80mm auto; margin: 0; }
+          body {
+            width: 72mm;
+            margin: 0 auto;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #000;
+          }
+          .text-center { text-align: center; }
+          .bold { font-weight: bold; }
+          .divider { border-top: 1px dashed #000; margin: 8px 0; }
+          table { width: 100%; border-collapse: collapse; }
+        </style>
+      </head>
+      <body>
+        <div class="text-center">
+          ${tenQuan ? `<p class="bold" style="font-size: 16px; margin: 0 0 5px 0;">${tenQuan}</p>` : ""}
+          ${contact ? `<p style="margin: 0 0 10px 0; font-size: 10px;">${contact}</p>` : ""}
+          <p class="bold" style="margin: 0 0 5px 0;">HÓA ĐƠN THANH TOÁN</p>
+          <p style="margin: 0 0 5px 0;">Bàn: ${table?.name || ""}</p>
+          <p style="margin: 0 0 5px 0;">Mã HD: #${orderId}</p>
+          <p style="margin: 0 0 10px 0; font-size: 10px;">Thời gian: ${new Date().toLocaleString("vi-VN")}</p>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 4px 0;">Món ăn</th>
+              <th style="text-align: right; padding: 4px 0;">T.Tiền</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+        
+        <div class="divider"></div>
+        
+        <table style="font-size: 11px; width: 100%;">
+          <tr>
+            <td style="padding: 2px 0;">Tạm tính:</td>
+            <td style="text-align: right; padding: 2px 0;">${new Intl.NumberFormat("vi-VN").format(subtotal)}đ</td>
+          </tr>
+          ${taxAmount > 0 ? `
+          <tr>
+            <td style="padding: 2px 0;">Thuế VAT (${taxRate}%):</td>
+            <td style="text-align: right; padding: 2px 0;">${new Intl.NumberFormat("vi-VN").format(taxAmount)}đ</td>
+          </tr>
+          ` : ""}
+          <tr class="bold" style="font-size: 13px;">
+            <td style="padding: 4px 0;">TỔNG CỘNG:</td>
+            <td style="text-align: right; padding: 4px 0;">${new Intl.NumberFormat("vi-VN").format(total)}đ</td>
+          </tr>
+        </table>
+        
+        ${footer ? `
+        <div class="divider"></div>
+        <div class="text-center" style="font-size: 10px; margin-top: 10px;">
+          <p style="margin: 0; font-style: italic;">${footer}</p>
+        </div>
+        ` : ""}
+        
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 500);
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+};
+
 export default function TablePayment() {
   const { tableId } = useParams();
   const navigate = useNavigate();
@@ -194,6 +310,17 @@ export default function TablePayment() {
     setSubmitting(false);
   }
 };
+  const handlePrintReceipt = () => {
+    if (visibleItems.length === 0) return;
+    printReceipt(
+      order?.id || "TAM_TINH",
+      table,
+      visibleItems.map(item => ({ name: item.mon_ten, price: item.price, quantity: item.quantity })),
+      settings,
+      paymentAmount
+    );
+  };
+
   const handleCheckout = () => {
     completePayment();
   };
@@ -414,7 +541,15 @@ export default function TablePayment() {
                 )}
               </div>
 
-              <div className="border-t border-slate-100 bg-white p-3">
+              <div className="border-t border-slate-100 bg-white p-3 space-y-2">
+                <button
+                  type="button"
+                  onClick={handlePrintReceipt}
+                  disabled={visibleItems.length === 0}
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-black transition-colors"
+                >
+                  In hóa đơn
+                </button>
                 <button
                   type="button"
                   onClick={handleCheckout}
