@@ -14,7 +14,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: corsOptions,
 });
-
+// Tạo kết nối Socket.IO và xử lý sự kiện khi client kết nối
 io.on('connection', (socket) => {
   socket.on('join_room', (room) => {
     if (['admin', 'staff', 'kitchen'].includes(room)) {
