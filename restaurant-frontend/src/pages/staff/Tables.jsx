@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CalendarBlank, Users } from "@phosphor-icons/react";
 import API from "../../services/api";
-
+import { joinRealtimeRoom, subscribeRealtime } from "../../services/socketService";
 const STATUS_CONFIG = {
   trong: {
     label: "Bàn trống",
@@ -92,34 +92,44 @@ export default function TablesPage() {
   }
 
   useEffect(() => {
-    let cancelled = false;
+  let cancelled = false;
 
-    Promise.all([
-      API.get("/api/tables"),
-      API.get("/api/tables/areas"),
-      API.get("/api/tables/reservations/all"),
-    ]).then(([tablesRes, areasRes, reservationsRes]) => {
-      if (cancelled) return;
-      setTables(tablesRes.data);
-      setAreas(areasRes.data);
-      setReservations(reservationsRes.data);
-    }).catch(console.error)
-      .finally(() => { if (!cancelled) setLoading(false); });
+  joinRealtimeRoom("staff");
+  const unsubscribeTableStatus = subscribeRealtime("TABLE_STATUS_UPDATED", (payload) => {
+    console.log("[Socket] Nhận cập nhật trạng thái bàn:", payload);
+        setTables((prevTables) =>
+      prevTables.map((t) =>
+        Number(t.id) === Number(payload.table_id) ? { ...t, status: payload.status } : t
+      )
+    );
+    API.get("/api/tables/reservations/all")
+      .then((res) => { if (!cancelled) setReservations(res.data); })
+      .catch(console.error);
+  });
+  Promise.all([
+    API.get("/api/tables"),
+    API.get("/api/tables/areas"),
+    API.get("/api/tables/reservations/all"),
+  ]).then(([tablesRes, areasRes, reservationsRes]) => {
+    if (cancelled) return;
+    setTables(tablesRes.data);
+    setAreas(areasRes.data);
+    setReservations(reservationsRes.data);
+  }).catch(console.error)
+    .finally(() => { if (!cancelled) setLoading(false); });
 
-    API.get("/api/settings/server-ip")
-      .then((res) => { if (!cancelled && res.data?.ip) setServerIP(res.data.ip); })
-      .catch(() => {});
+  API.get("/api/settings/server-ip")
+    .then((res) => { if (!cancelled && res.data?.ip) setServerIP(res.data.ip); })
+    .catch(() => {});
 
-    const interval = setInterval(fetchAll, 60 * 1000);
-    const closeMenu = () => setContextMenu(null);
-    window.addEventListener("click", closeMenu);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      window.removeEventListener("click", closeMenu);
-    };
-  }, []);
+  const closeMenu = () => setContextMenu(null);
+  window.addEventListener("click", closeMenu);
+  return () => {
+    cancelled = true;
+    unsubscribeTableStatus();
+    window.removeEventListener("click", closeMenu);
+  };
+}, []);
 
   const qrBaseUrl = serverIP && serverIP !== "127.0.0.1"
     ? `http://${serverIP}:${window.location.port || "5173"}`
