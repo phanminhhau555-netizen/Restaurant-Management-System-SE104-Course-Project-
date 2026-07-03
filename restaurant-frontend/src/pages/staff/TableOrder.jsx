@@ -65,7 +65,7 @@ const renderStatusBadges = (item) => {
 export default function TableOrder() {
   const { tableId, token } = useParams();
   const navigate = useNavigate();
-  const isQRMode = new URLSearchParams(window.location.search).get("mode") === "qr" || new URLSearchParams(window.location.search).get("qr") === "true" || !!token;
+  const isQRMode = new URLSearchParams(window.location.search).get("mode") === "qr" || new URLSearchParams(window.location.search).get("qr") === "true" || !token;
   const getTableRequest = useCallback((activeTableId) => (
     isQRMode ? API.get(`/api/qr/tables/${token}`) : API.get(`/api/tables/${activeTableId}`)
   ), [isQRMode, token]);
