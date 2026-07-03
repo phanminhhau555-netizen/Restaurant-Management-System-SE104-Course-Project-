@@ -1,2 +1,0 @@
-ALTER TABLE tables
-ADD COLUMN reserved_at DATETIME NULL AFTER status;
